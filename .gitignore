@@ -1,0 +1,49 @@
+# --- Astro 核心忽略项 ---
+dist/
+.sonda/
+.astro/
+node_modules/
+
+# --- 缓存与运行时 (针对你扫描出的二进制文件) ---
+.cache/
+.wrangler/
+# 排除 pagefind 生成的索引和执行文件
+pagefind/
+pagefind_extended.exe
+# 排除 biome 等工具的二进制文件
+biome.exe
+workerd.exe
+*.exe
+*.dylib
+*.so
+*.wasm
+
+# --- 压缩包与备份 (防止 212MB 闪退的核心) ---
+*.rar
+*.zip
+*.7z
+*.tar.gz
+backups/
+archive/
+
+# --- 日志文件 ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- 环境配置文件 (保护隐私) ---
+.env
+.env.production
+.env*.local
+
+# --- 平台与编辑器特定文件 ---
+.vercel
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- 临时文件 ---
+*.tmp
+*.bak

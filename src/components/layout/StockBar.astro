@@ -1,0 +1,79 @@
+---
+// src/components/layout/StockBar.astro
+---
+<div class="ticker-container" id="ticker-box">
+    <div style="height: 46px;"></div>
+  </div>
+  
+  <script is:inline>
+    async function loadTicker() {
+      const container = document.getElementById('ticker-box');
+      let isDayTime = true;
+  
+      try {
+        // 获取标准的北京时间 API
+        const response = await fetch('https://api.m.taobao.com/rest/api3.do?api=mtop.common.getTimestamp');
+        const json = await response.json();
+        const timestamp = parseInt(json.data.t);
+        // 转换为北京时间 (UTC+8) 的小时数
+        const bjDate = new Date(timestamp);
+        const bjHours = bjDate.getUTCHours() + 8;
+        const currentHour = bjHours >= 24 ? bjHours - 24 : bjHours;
+  
+        // 定义白天（北京时间 9:00 - 16:00）显示 A 股，其他时间美股
+        isDayTime = currentHour >= 9 && currentHour < 16;
+      } catch (e) {
+        console.warn('无法获取网络时间，回退至本地时间', e);
+        isDayTime = new Date().getHours() >= 9 && new Date().getHours() < 16;
+      }
+      
+      // A 股配置 + 黄金
+      const cnSymbols = [
+        {"proName":"SSE:000001","title":"上证指数"},
+        {"proName":"SZSE:399001","title":"深证成指"},
+        {"proName":"SSE:000300","title":"沪深300"},
+        {"proName":"TVC:GOLD","title":"黄金现货"}
+      ];
+      
+      // 美股配置 + 黄金
+      const usSymbols = [
+        {"proName":"FOREXCOM:SPXUSD","title":"标普500"},
+        {"proName":"FOREXCOM:NSXUSD","title":"纳指100"},
+        {"proName":"FOREXCOM:DJI","title":"道琼斯"},
+        {"proName":"TVC:GOLD","title":"黄金现货"}
+      ];
+  
+      const config = {
+        "symbols": isDayTime ? cnSymbols : usSymbols,
+        "showSymbolLogo": true,
+        "colorTheme": "dark",
+        "isTransparent": true,
+        "displayMode": "regular"
+      };
+  
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.tradingview-widget.com/embed-widget/ticker-tape/?locale=zh_CN#${encodeURIComponent(JSON.stringify(config))}`;
+      iframe.style.cssText = "width: 100%; height: 46px; border: none; overflow: hidden;";
+      iframe.setAttribute('frameborder', '0');
+      
+      container.innerHTML = ''; 
+      container.appendChild(iframe);
+    }
+  
+    loadTicker();
+  </script>
+  
+  <style>
+    .ticker-container {
+      width: 100%;
+      height: 46px;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: center;
+    }
+  </style>

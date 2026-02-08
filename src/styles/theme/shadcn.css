@@ -1,0 +1,62 @@
+/* shadCN theme - 萌系天蓝定制版 */
+@layer base {
+  :root {
+    /* 背景使用非常清透的奶油白 */
+    --background: 210 50% 99%;
+    --foreground: 222 47% 20%;
+
+    --card: 210 50% 99%;
+    --card-foreground: 222 47% 20%;
+
+    --popover: 210 50% 99%;
+    --popover-foreground: 222 47% 20%;
+
+    /* 【核心修改】天蓝色：像晴朗天空一样的浅蓝色 */
+    --primary: 199 85% 65%; 
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 199 60% 94%;
+    --secondary-foreground: 199 80% 30%;
+
+    --muted: 199 60% 94%;
+    --muted-foreground: 199 20% 50%;
+
+    --accent: 199 60% 94%;
+    --accent-foreground: 199 80% 30%;
+
+    --destructive: 0 84% 80%; /* 连报错都变萌的淡粉红 */
+    --destructive-foreground: 0 0% 20%;
+
+    --border: 199 60% 90%;
+    --input: 199 60% 90%;
+    --ring: 199 85% 65%;
+
+    --badge-primary: 199 80% 60%;
+    
+    /* 【萌化关键】增加圆角感 */
+    --radius: 1rem; 
+  }
+
+  .dark {
+    /* 暗色模式保持这种蓝色的“霓虹淡化版”，不至于太刺眼 */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 199 80% 70%; 
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 32% 17%;
+    --accent-foreground: 210 40% 98%;
+    --border: 217 32% 25%;
+    --input: 217 32% 25%;
+    --ring: 199 80% 70%;
+    --badge-primary: 199 80% 70%;
+    --radius: 1rem;
+  }
+}

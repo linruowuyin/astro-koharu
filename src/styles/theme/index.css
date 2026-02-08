@@ -1,0 +1,51 @@
+:root {
+  --gradient-bg-start: #f8fafc;
+  --gradient-bg-end: #f1f5f9;
+  --gradient-bg: linear-gradient(180deg, var(--gradient-bg-start) 10%, var(--gradient-bg-end) 100%);
+  
+  /* 按钮和点缀改为更有层次的蓝 */
+  --gradient-pink: linear-gradient(279deg, #3b82f6 0%, #1d4ed8 100%);
+  
+  /* 顶部导航条背景：改为淡淡的冰水色 */
+  --gradient-header: linear-gradient(-225deg, #f0f9ff 0, #e0f2fe 100%);
+
+  /* shoka migrate */
+  --box-bg-shadow: rgba(0, 0, 0, 0.05);
+  --grey-1-a5: rgba(248, 250, 252, 0.5);
+  
+  --gradient-shoka-button-start: #60a5fa;
+  --gradient-shoka-button-end: #2563eb;
+  --gradient-shoka-button: linear-gradient(
+    to right,
+    var(--gradient-shoka-button-start) 0,
+    var(--gradient-shoka-button-end) 100%
+  );
+  --shoka-blue: 213 80% 48%;
+  --grey-4: 0 0% 80%;
+  --color-pink: #2563eb;
+  --color-pink-a3: rgba(37, 99, 235, 0.1);
+}
+
+.dark {
+  /* ... 这里保持我上一次给你的 .dark 内容即可 ... */
+  --gradient-bg-start: #0f172a;
+  --gradient-bg-end: #020617;
+  --gradient-bg: linear-gradient(180deg, var(--gradient-bg-start) 10%, var(--gradient-bg-end) 100%);
+  --gradient-pink: linear-gradient(279deg, #0ea5e9 0%, #2563eb 100%);
+  --gradient-header: linear-gradient(-225deg, #1e293b 0, #0f172a 100%);
+
+  --box-bg-shadow: rgba(0, 0, 0, 0.5);
+  --grey-1-a5: rgba(30, 41, 59, 0.5);
+
+  --gradient-shoka-button-start: #0ea5e9cc;
+  --gradient-shoka-button-end: #2563ebcc;
+  --gradient-shoka-button: linear-gradient(
+    to right,
+    var(--gradient-shoka-button-start) 0,
+    var(--gradient-shoka-button-end) 100%
+  );
+  --shoka-blue: 199 89% 48%;
+  --grey-4: 0 0% 40%;
+  --color-pink: #38bdf8;
+  --color-pink-a3: rgba(56, 189, 248, 0.3);
+}

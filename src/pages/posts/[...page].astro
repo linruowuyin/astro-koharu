@@ -1,0 +1,35 @@
+---
+import HomeSider from '@components/layout/HomeSider.astro';
+import PostList from '@components/post/PostList.astro';
+import Cover from '@components/ui/cover/Cover.astro';
+import { CONTENT_PADDING, PAGINATION } from '@constants/layout';
+import { seoConfig } from '@constants/site-config';
+import Layout from '@layouts/Layout.astro';
+import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
+import { getNonFeaturedPosts } from '@lib/content';
+import { toPostCardDataList } from '@lib/content/transforms';
+import type { PaginateFunction } from 'astro';
+import Divider from '@/components/ui/divider';
+
+export async function getStaticPaths({ paginate }: { paginate: PaginateFunction }) {
+  // 获取所有非系列文章用于分页
+  const postCollections = await getNonFeaturedPosts();
+  return paginate(postCollections, { pageSize: PAGINATION.pageSize });
+}
+
+const { page } = Astro.props;
+const postCardData = toPostCardDataList(page.data);
+---
+
+<Layout title={seoConfig.title}>
+  <TwoColumnLayout>
+    <Cover slot="cover" />
+    <HomeSider slot="sider" />
+    <div
+      class={`shadow-box bg-gradient-start tablet:shadow-none flex flex-col gap-4 overflow-hidden ${CONTENT_PADDING.standard}`}
+    >
+      <Divider>文章列表</Divider>
+      <PostList posts={postCardData} page={page} />
+    </div>
+  </TwoColumnLayout>
+</Layout>
