@@ -63,19 +63,19 @@ categoryMap:
 featuredCategories:
   - link: fund # 对应 categoryMap 中 随笔: life
     label: 基金
-    image: /img/cover/200.webp
+    image: /img/cover/fund.webp
     description: 懒人选股，lof套利，外围市场
   - link: note # 对应 categoryMap 中 笔记: note
     label: 笔记
-    image: /img/cover/201.webp
+    image: /img/cover/note.webp
     description: 复盘笔记、学习笔记
   - link: note/research # 必须改这里，对应上面新定义的 research
     label: 投研
-    image: /img/cover/202.webp
+    image: /img/cover/research.webp
     description: 机构等研报
   - link: tools # 对应 categoryMap 中 工具: tools
     label: 工具
-    image: /img/cover/203.webp
+    image: /img/cover/tools.webp
     description: 工具使用、效率提升
 
 # =============================================================================
