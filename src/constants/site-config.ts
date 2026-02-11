@@ -197,7 +197,7 @@ export const seoConfig = {
   url: siteConfig.site,
 };
 
-export const defaultCoverList = Array.from({ length: 85 }, (_, index) => index + 1).map((item) => `/img/cover/${item}.webp`);
+export const defaultCoverList = Array.from({ length: 90 }, (_, index) => index + 1).map((item) => `/img/cover/${item}.webp`);
 //轮播图循环数量上限
 // Analytics config types
 type AnalyticsConfig = {
