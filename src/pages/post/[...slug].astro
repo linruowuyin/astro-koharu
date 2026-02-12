@@ -17,6 +17,9 @@ import { Comment } from '@/components/comment';
 import EditButton from '@/components/EditButton';
 import { extractTextFromMarkdown } from '@/lib/sanitize';
 
+import PasswordProtection from '@components/post/PasswordProtection.astro';
+import CryptoJS from "crypto-js";
+
 export async function getStaticPaths() {
   const postCollections = await getSortedPosts();
 
@@ -29,13 +32,19 @@ export async function getStaticPaths() {
   });
 }
 const { post, postId } = Astro.props;
-const { Content } = await post.render();
+const { Content, headings } = await post.render(); 
 const { title, categories = [], tags = [], date } = post?.data ?? {};
 
-// 使用统一的工具函数获取文章描述
-const finalDescription = getPostDescription(post);
+const isEncrypted = post.data.encrypted && post.data.password;
+let encryptedContent = "";
+if (isEncrypted) {
+  encryptedContent = CryptoJS.AES.encrypt(
+    "VERIFY:" + post.body, 
+    String(post.data.password)
+  ).toString();
+}
 
-// OGP image for BlogPosting schema (uses same fallback chain as Layout)
+const finalDescription = getPostDescription(post);
 const ogImage = getOgImageUrl(post?.data.cover, Astro.site);
 
 const jsonLd = {
@@ -44,11 +53,7 @@ const jsonLd = {
   headline: title,
   description: finalDescription,
   keywords: categories?.length ? tags.concat(categories[0]) : tags,
-  author: {
-    '@type': 'Person',
-    name: siteConfig.author ?? siteConfig.name,
-    url: Astro.site,
-  },
+  author: { '@type': 'Person', name: siteConfig.author ?? siteConfig.name, url: Astro.site },
   datePublished: formatForSeo(date),
   ...(post.data.updated && { dateModified: formatForSeo(post.data.updated) }),
   ...(ogImage && { image: ogImage }),
@@ -58,65 +63,29 @@ const jsonLd = {
 const categoryArr = getCategoryArr(categories?.[0]);
 const categoryStr = categoryArr?.length ? ` | ${categoryArr.join(' / ')}` : '';
 
-// Generate breadcrumb data for categories
 const breadcrumbCategories = [];
 if (categoryArr?.length) {
   for (let i = 0; i < categoryArr.length; i++) {
     const partialCategories = categoryArr.slice(0, i + 1);
     const link = buildCategoryPath(partialCategories);
-    breadcrumbCategories.push({
-      name: categoryArr[i],
-      link: link,
-    });
+    breadcrumbCategories.push({ name: categoryArr[i], link: link });
   }
 }
 
-// BreadcrumbList structured data for SEO
 const homeName = siteConfig.breadcrumbHome || '首页';
-const breadcrumbListItems = [
-  {
-    '@type': 'ListItem',
-    position: 1,
-    name: homeName,
-    item: new URL('/', Astro.site).href,
-  },
-  ...breadcrumbCategories.map((category, index) => ({
-    '@type': 'ListItem',
-    position: index + 2,
-    name: category.name,
-    item: new URL(category.link, Astro.site).href,
-  })),
-  {
-    '@type': 'ListItem',
-    position: breadcrumbCategories.length + 2,
-    name: title,
-    // 当前页面（最后一项）省略 item，符合 Google 结构化数据最佳实践
-  },
-];
-
-const breadcrumbJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: breadcrumbListItems,
-};
-
-// 确定显示的摘要内容和来源类型
 const postSlug = post.data?.link ?? post.slug;
 let summaryText: string | null = null;
 let summarySource: SummarySource | null = null;
 
 if (post.data.description) {
-  // 优先使用手写描述
   summaryText = post.data.description;
   summarySource = 'description';
 } else {
-  // 尝试获取 AI 摘要
   const aiSummary = getPostSummary(postSlug);
   if (aiSummary) {
     summaryText = aiSummary;
     summarySource = 'ai';
   } else {
-    // 降级到自动提取
     summaryText = extractTextFromMarkdown(post.body, 200);
     summarySource = 'auto';
   }
@@ -129,47 +98,33 @@ if (post.data.description) {
   siderType={HomeSiderType.POST}
   post={post}
 >
-  <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-  <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
   <TwoColumnLayout post={post}>
     <Cover slot="cover" data={post} />
-    <HomeSider slot="sider" type={HomeSiderType.POST} post={post} />
+    {/* 目录不再受限，始终渲染原始 headings */}
+    <HomeSider slot="sider" type={HomeSiderType.POST} post={post} headings={headings} />
+    
     <div class={`shadow-box bg-gradient-start flex flex-col gap-2 ${CONTENT_PADDING.standard}`}>
-      <!-- Breadcrumb Navigation -->
       <nav class="text-muted-foreground flex items-center justify-between gap-2 text-sm">
         <div class="flex items-center gap-2">
           <div class="flex items-center gap-1">
-            <!-- Home Icon and Link -->
             <Icon name="fa6-solid:house-chimney" class="h-4 w-4" />
-            <a href="/" aria-label={`返回${homeName}`}>
-              <span class="hover:text-blue transition-colors duration-300">{homeName}</span>
-            </a>
+            <a href="/"><span class="hover:text-blue transition-colors duration-300">{homeName}</span></a>
           </div>
-          <!-- Category Breadcrumbs -->
-          {
-            breadcrumbCategories.map((category, index) => (
-              <>
-                <Icon name="ri:arrow-right-s-line" class="text-muted-foreground/60 h-4 w-4" />
-                <a
-                  href={category.link}
-                  class={`hover:text-blue transition-colors duration-300 ${index === breadcrumbCategories.length - 1 ? 'text-primary bg-primary/10 hover:text-primary hover:bg-primary/20 rounded-full px-2.5 py-1' : ''}`}
-                  aria-label={`前往${category.name}分类`}
-                >
-                  {category.name}
-                </a>
-              </>
-            ))
-          }
+          {breadcrumbCategories.map((category) => (
+            <>
+              <Icon name="ri:arrow-right-s-line" class="text-muted-foreground/60 h-4 w-4" />
+              <a href={category.link} class="hover:text-blue transition-colors duration-300">{category.name}</a>
+            </>
+          ))}
         </div>
-        {import.meta.env.DEV && <EditButton client:only="react" postId={postId} />}
       </nav>
-      {
-        summaryText && summarySource && (
-          <SummaryPanel client:visible summary={summaryText} source={summarySource} className="mt-2" />
-        )
-      }
+
       <article class="prose md:prose-sm dark:prose-invert">
-        <CustomContent Content={Content} />
+        {isEncrypted ? (
+          <PasswordProtection encryptedContent={encryptedContent} />
+        ) : (
+          <CustomContent Content={Content} />
+        )}
       </article>
       <Comment />
     </div>

@@ -8,7 +8,7 @@ import type { BlogSchema, BlogSchemaInput } from 'types/blog';
  *
  * Accepts:
  * - Date objects (reinterpreted from UTC to site timezone, since gray-matter
- *   incorrectly parses "2025-12-29 21:55:00" as UTC)
+ * incorrectly parses "2025-12-29 21:55:00" as UTC)
  * - Date strings like "2025-12-29 21:55:00" (parsed as site timezone)
  * - ISO strings like "2025-12-29T21:55:00+08:00" (parsed correctly with offset)
  */
@@ -46,6 +46,12 @@ const blogCollection = defineCollection({
     tocNumbering: z.boolean().optional().default(true),
     // 排除 AI 摘要生成
     excludeFromSummary: z.boolean().optional(),
+    
+    // --- 缝合位置：添加加密字段支持 ---
+    encrypted: z.boolean().optional(),
+    password: z.string().or(z.number()).optional().transform(val => String(val)),
+    // ---------------------------------
+    
   }) satisfies z.ZodType<BlogSchema, z.ZodTypeDef, BlogSchemaInput>,
 });
 
