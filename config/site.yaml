@@ -340,12 +340,24 @@ navigation:
       - name: 龙虎榜
         path: https://data.10jqka.com.cn/market/longhu/
         icon: ri:fire-fill
+      - name: 格隆汇
+        path: https://www.gelonghui.com/
+        icon: ri:compass-3-fill
+      - name: 大时代
+        path: https://bbs.nga.cn/thread.php?fid=706&rand=554
+        icon: ri:gamepad-line
       - name: 新浪财经
         path: https://finance.sina.com.cn/
         icon: ri:weibo-fill      
       - name: 金十数据
         path: https://www.jin10.com/
-        icon: ri:timer-flash-line
+        icon: ri:timer-flash-line   
+      - name: 萝卜投研
+        path: https://robo.datayes.com/
+        icon: ri:leaf-fill
+      - name: 前沿知识库
+        path: https://wk.askci.com/
+        icon: ri:file-word-2-fill    
       - name: 免费资源hi189
         path: https://hi189.com/category/gupiaoqihuo
         icon: ri:timer-flash-line
