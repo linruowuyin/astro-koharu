@@ -377,7 +377,26 @@ navigation:
       - name: 东方财富
         path: https://www.eastmoney.com/
         icon: ri:line-chart-line
-        
+
+  - name: 化工
+    icon: ri:flask-line
+    children:
+      - name: 化工网
+        path: https://china.chemnet.com/
+        icon: ri:flask-fill
+      - name: 百川盈孚
+        path: https://www.baiinfo.com/
+        icon: ri:database-2-line
+      - name: 卓创资讯
+        path: https://www.sci99.com/
+        icon: ri:bar-chart-box-line
+      - name: 隆众资讯
+        path: https://www.oilchem.net/
+        icon: ri:drop-line
+      - name: 中国化工信息网
+        path: https://library.cheminfo.cn/index
+        icon: ri:test-tube-line
+
   - name: 港美
     icon: ri:money-cny-box-line
     children:
