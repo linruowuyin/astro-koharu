@@ -397,6 +397,25 @@ navigation:
         path: https://library.cheminfo.cn/index
         icon: ri:test-tube-line
 
+  - name: 涨价
+    icon: ri:rocket-line
+    children:
+      - name: 生意社
+        path: https://www.100ppi.com/
+        icon: ri:heavy-showers-line
+      - name: 上海有色网
+        path: https://www.smm.cn/
+        icon: ri:bar-chart-box-line
+      - name: 全球半导体观察
+        path: https://www.dramx.com/
+        icon: ri:cpu-line
+      - name: CFM 闪存市场
+        path: https://www.chinaflashmarket.com/
+        icon: ri:cpu-line
+      - name: 上海航运交易所
+        path: https://www.sse.net.cn/home
+        icon: ri:ship-2-line
+
   - name: 港美
     icon: ri:money-cny-box-line
     children:
