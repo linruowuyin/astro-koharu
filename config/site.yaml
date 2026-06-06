@@ -361,6 +361,9 @@ navigation:
       - name: 免费资源hi189
         path: https://hi189.com/category/gupiaoqihuo
         icon: ri:timer-flash-line
+      - name: 缠中说禅
+        path: https://chzhshch.blog/
+        icon: https://chzhshch.blog/img/logo.svg
 
   - name: 股吧
     icon: ri:funds-line
