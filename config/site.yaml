@@ -363,7 +363,7 @@ navigation:
         icon: ri:timer-flash-line
       - name: 缠中说禅
         path: https://chzhshch.blog/
-        icon: https://chzhshch.blog/img/logo.svg
+        icon: ri:leaf-fill
 
   - name: 股吧
     icon: ri:funds-line
