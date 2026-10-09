@@ -1,3 +1,10 @@
 packages:
   - '.'
   - 'cms'
+
+# pnpm 10 起不再读取 package.json 里的 `pnpm` 字段，该配置必须写在这里，
+# 否则 sharp / esbuild 的安装脚本会被拦下，Cloudflare 构建报
+# "Cannot find module ... sharp" 或 esbuild 二进制缺失。
+onlyBuiltDependencies:
+  - sharp
+  - esbuild
