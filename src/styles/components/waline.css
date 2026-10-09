@@ -7,16 +7,16 @@
 :root body {
   /* === 主题色 (Theme Colors) === */
   /* 主要主题色，用于按钮、链接等交互元素 */
-  --waline-theme-color: #e9546b;
+  --waline-theme-color: #3b82f6;
   /* 激活状态颜色，用于悬停、焦点状态 */
-  --waline-active-color: #ed788c;
+  --waline-active-color: #60a5fa;
   --waline-light-grey: hsl(var(--muted-foreground));
 }
 
 /* === 暗色模式 (Dark Mode) === */
 html.dark body {
   /* 主题色 - 暗色模式下使用更亮的颜色以保持对比度 */
-  --waline-theme-color: #ed788c;
+  --waline-theme-color: #60a5fa;
   --waline-active-color: #f09aab;
   --waline-light-grey: hsl(var(--muted-foreground));
 

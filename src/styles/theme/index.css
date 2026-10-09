@@ -33,7 +33,7 @@
 
   /* Named text colors — adapted for light/dark mode readability */
   --color-red: #e74c3c;
-  --color-pink-text: #d6336c;
+  --color-pink-text: #2563eb;
   --color-orange: #f39c12;
   --color-yellow: #d4a017;
   --color-green: #27ae60;
@@ -77,7 +77,7 @@
 
   /* Named text colors — brighter for dark backgrounds */
   --color-red: #f87171;
-  --color-pink-text: #f472b6;
+  --color-pink-text: #38bdf8;
   --color-orange: #fbbf24;
   --color-yellow: #facc15;
   --color-green: #4ade80;

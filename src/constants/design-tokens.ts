@@ -216,8 +216,8 @@ export const shadows = {
   'shoka-button': '0px 0px 16px 0px rgb(233, 84, 105, 0.8)',
 
   // Sakura-tinted elevation for floating controls
-  'sakura-sm': '0 6px 16px -8px rgb(233 84 107 / 0.45), 0 2px 6px -3px rgb(40 20 40 / 0.12)',
-  'sakura-md': '0 10px 24px -10px rgb(233 84 107 / 0.55), 0 3px 8px -4px rgb(40 20 40 / 0.14)',
+  'sakura-sm': '0 6px 16px -8px rgb(59 130 246 / 0.45), 0 2px 6px -3px rgb(15 23 42 / 0.12)',
+  'sakura-md': '0 10px 24px -10px rgb(59 130 246 / 0.55), 0 3px 8px -4px rgb(15 23 42 / 0.14)',
 } as const;
 
 /**

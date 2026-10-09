@@ -180,16 +180,16 @@
   color: #fff;
   font-weight: 600;
   box-shadow:
-    0 6px 16px -8px rgb(233 84 107 / 0.6),
-    0 1px 2px rgb(40 20 40 / 0.1);
+    0 6px 16px -8px rgb(59 130 246 / 0.6),
+    0 1px 2px rgb(15 23 42 / 0.1);
 }
 @media (hover: hover) {
   .editor-primary:hover {
     color: #fff;
     background-color: transparent;
     box-shadow:
-      0 8px 20px -8px rgb(233 84 107 / 0.75),
-      0 1px 2px rgb(40 20 40 / 0.1);
+      0 8px 20px -8px rgb(59 130 246 / 0.75),
+      0 1px 2px rgb(15 23 42 / 0.1);
   }
 }
 .editor-soft {

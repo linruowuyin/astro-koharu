@@ -6,26 +6,17 @@
   </div>
   
   <script is:inline>
-    async function loadTicker() {
+    function loadTicker() {
       const container = document.getElementById('ticker-box');
-      let isDayTime = true;
-  
-      try {
-        // 获取标准的北京时间 API
-        const response = await fetch('https://api.m.taobao.com/rest/api3.do?api=mtop.common.getTimestamp');
-        const json = await response.json();
-        const timestamp = parseInt(json.data.t);
-        // 转换为北京时间 (UTC+8) 的小时数
-        const bjDate = new Date(timestamp);
-        const bjHours = bjDate.getUTCHours() + 8;
-        const currentHour = bjHours >= 24 ? bjHours - 24 : bjHours;
-  
-        // 定义白天（北京时间 9:00 - 16:00）显示 A 股，其他时间美股
-        isDayTime = currentHour >= 9 && currentHour < 16;
-      } catch (e) {
-        console.warn('无法获取网络时间，回退至本地时间', e);
-        isDayTime = new Date().getHours() >= 9 && new Date().getHours() < 16;
-      }
+      if (!container) return;
+
+      // 按北京时间判断时段：09:00-16:00 显示 A 股，其余显示美股。
+      // 早期版本会请求淘宝接口校准北京时间，但该接口跨境链路不稳（实测
+      // ERR_CONNECTION_CLOSED，且会挂起 10 秒以上才失败），导致行情条长时间空白。
+      // 这里改为纯本地计算，不再依赖任何外部时间接口。
+      const now = new Date();
+      const bjHour = (now.getUTCHours() + 8) % 24;
+      const isDayTime = bjHour >= 9 && bjHour < 16;
       
       // A 股配置 + 黄金
       const cnSymbols = [
@@ -55,6 +46,7 @@
       iframe.src = `https://www.tradingview-widget.com/embed-widget/ticker-tape/?locale=zh_CN#${encodeURIComponent(JSON.stringify(config))}`;
       iframe.style.cssText = "width: 100%; height: 46px; border: none; overflow: hidden;";
       iframe.setAttribute('frameborder', '0');
+      iframe.setAttribute('title', '行情条');
       
       container.innerHTML = ''; 
       container.appendChild(iframe);
