@@ -205,5 +205,11 @@
     "*.{md,mdx}": [
       "lint-md --fix"
     ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild"
+    ]
   }
 }
