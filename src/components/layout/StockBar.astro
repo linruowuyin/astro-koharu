@@ -36,7 +36,7 @@
       "symbols": isDayTime ? cnSymbols : usSymbols,
       // 品种 logo 来自 s3-symbol-logo.tradingview.com。该域名跨境经常连不上，
       // 拉不到时浏览器会在行情条正中渲染一个破图图标。行情数值本身不依赖它，
-      // 所以直接关掉，用名称+涨跌幅代替 logo。
+      // 所以直接关掉，用名称+涨跌幅代替。
       "showSymbolLogo": false,
       "colorTheme": "dark",
       "isTransparent": true,
@@ -53,13 +53,21 @@
     iframe.setAttribute('referrerpolicy', 'no-referrer');
     iframe.setAttribute('scrolling', 'no');
 
+    // 兜底：widget 所在域名被拦截时不会抛 error，只会留下 TradingView 自己的
+    // 灰色占位块（#ddd）+ 破图图标，整条留着比不显示更像站点坏了。
+    //
+    // 判定依据只能是 iframe 的 load 事件——跨域拿不到内部渲染状态。注意不能
+    // 无条件超时删除：那会把正常加载成功的行情条也一起删掉（实测踩过，
+    // 表现为 12 秒后行情条凭空消失）。
+    let settled = false;
+    const settle = () => { settled = true; };
+    iframe.addEventListener('load', settle, { once: true });
+    iframe.addEventListener('error', settle, { once: true });
+
     container.appendChild(iframe);
 
-    // 兜底：widget 被拦截时不会抛 error，只会留下 TradingView 自己的灰色占位块
-    // （#ddd）+ 破图图标。整条留着比不显示更像站点坏了，所以超时后直接移除。
-    // iframe 跨域，拿不到内部渲染状态，只能用超时判断，因此给得比较宽。
     setTimeout(() => {
-      if (container.isConnected) container.remove();
+      if (!settled && container.isConnected) container.remove();
     }, 12000);
   }
 
