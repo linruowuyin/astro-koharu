@@ -120,7 +120,7 @@ export const uiStrings = {
   'search.dialogOpen': '打开',
 
   // ── Friends ─────────────────────────────────────────────────
-  'friends.title': '友情链接',
+  'friends.title': '大佬链接',
   'friends.countUnit': '位朋友',
   'friends.emptyTitle': '还没有友链',
   'friends.emptyDesc': '欢迎留下你的小站，成为第一位朋友。',

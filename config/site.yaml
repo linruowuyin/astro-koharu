@@ -11,53 +11,27 @@
 # Site Basic Information
 # =============================================================================
 site:
-  title: 余弦の博客 # 网站名称
-  alternate: cosine # 网站英文名称 用于页脚、Logo、@ handle 等
-  subtitle: WA 的一声就哭了 # 网站副标题
-  name: cos # 作者名称 - 请修改为你的名字
-  description: 一个基于 Astro 的现代化博客主题 # 网站描述
+  title: 凛の财频 # 网站名称
+  alternate: linup # 网站英文名称 用于页脚、Logo、@ handle 等
+  subtitle: 伊人眸冷秋水寒，日日思君月生怜 # 网站副标题
+  name: linw # 作者名称 - 请修改为你的名字
+  description: FI / ACG / 反量化 / ISTG # 网站描述
   avatar: /img/avatar.webp # 网站头像
-  showLogo: false # 是否显示图形 Logo；默认显示站点名称，启用后可替换 src/assets/svg/logo.svg
-  author: Author # 作者名称 - 请修改为你的名字
-  url: https://koharu.cosine.ren # 站点 URL 用于 RSS 和 SEO
+  showLogo: false # 是否显示 Logo
+  author: linw # 作者名称 - 请修改为你的名字
+  url: https://nephren.de5.net # 站点 URL 用于 RSS 和 SEO
   defaultOgImage: /img/avatar.webp # 默认 Open Graph 图片
-  startYear: 2024 # 建站年份
+  startYear: 2026 # 建站年份
   timezone: Asia/Shanghai # 时区配置 (IANA 格式)，用于日期显示和处理
-  keywords: # SEO 关键词 (全局)
-    - 博客
-    - Astro
-    - 技术
-    - 前端
+  keywords: # SEO 关键词
+    - 基金
+    - ETF
+    - 投研
+    - 复盘
+    - 财经
+    - 量化
     # 请根据你的网站内容添加关键词
   # breadcrumbHome: 首页  # 面包屑导航中首页的显示名称（默认: '首页'）
-  # icp:                         # ICP 备案号（可自定义链接）
-  #   text: "粤ICP备xxxxxxxxxx号"
-  #   link: "https://beian.miit.gov.cn/"
-  # Enable slug transliteration (converts CJK characters to pinyin/romaji)
-  # Note: enabling this will break existing CJK URLs. Run `pnpm save-slugs` first to save old slugs into frontmatter.link
-  # enableSlugTransliteration: true
-
-# =============================================================================
-# Internationalization (i18n)
-# 国际化配置 - 控制多语言支持
-# =============================================================================
-# defaultLocale: 默认语言代码（URL 不带前缀）
-# locales: 支持的语言列表
-#   - code: 语言代码（BCP 47 短格式，如 'zh', 'en', 'ja'）
-#   - label: 语言显示名称（如 '中文', 'English'）
-# -----------------------------------------------------------------------------
-i18n:
-  defaultLocale: zh
-  locales:
-    - code: zh
-      label: 中文
-    - code: en
-      label: English
-      # enabled: false  # 内容存在但暂时禁用（保留内容但不生成路由）
-    - code: ja
-      label: 日本語
-    - code: ko
-      label: 한국어
 
 # =============================================================================
 # Category Map
@@ -66,14 +40,12 @@ i18n:
 # =============================================================================
 categoryMap:
   # Primary categories
-  随笔: life
+  基金: fund
   笔记: note
   工具: tools
   周刊: weekly
   # Secondary categories (for nested paths)
-  前端: front-end
-  CSS: css
-  番剧: anime
+  投研: research
   # Add more as needed:
   # 书摘: reading
   # 后端: back-end
@@ -91,21 +63,21 @@ categoryMap:
 #   description: 分类描述文字，显示在卡片上
 # -----------------------------------------------------------------------------
 featuredCategories:
-  - link: life # 对应 categoryMap 中 随笔: life
-    label: 随笔
-    image: /img/cover/2.webp
-    description: 生活记录、随想随笔
+  - link: fund # 对应 categoryMap 中 随笔: life
+    label: 基金
+    image: /img/cover/fund.webp
+    description: 懒人选股，lof套利，外围市场
   - link: note # 对应 categoryMap 中 笔记: note
     label: 笔记
-    image: /img/cover/4.webp
-    description: 技术笔记、学习笔记
-  - link: note/front-end # 嵌套分类：笔记/前端
-    label: 前端
-    image: /img/cover/1.webp
-    description: 前端技术相关
+    image: /img/cover/note.webp
+    description: 复盘笔记、学习笔记
+  - link: note/research # 必须改这里，对应上面新定义的 research
+    label: 投研
+    image: /img/cover/research.webp
+    description: 机构等研报
   - link: tools # 对应 categoryMap 中 工具: tools
     label: 工具
-    image: /img/cover/11.webp
+    image: /img/cover/tools.webp
     description: 工具使用、效率提升
 
 # =============================================================================
@@ -165,18 +137,18 @@ featuredSeries:
 # 添加新平台：复制现有配置块，修改键名和各字段值即可
 # -----------------------------------------------------------------------------
 social:
-  github:
-    url: https://github.com/your-username # 替换为你的 GitHub 链接
-    icon: ri:github-fill # Remix Icon 的 GitHub 图标
-    color: '#191717' # (可选) 图标颜色
+  # github:
+  #   url: https://github.com/your-username # 替换为你的 GitHub 链接
+  #   icon: ri:github-fill # Remix Icon 的 GitHub 图标
+  #   color: '#191717' # (可选) 图标颜色
   email:
     url: mailto:your@email.com # 替换为你的邮箱，需加 mailto: 前缀
     icon: ri:mail-line
     color: '#55acd5'
-  rss:
-    url: /rss.xml # 站内 RSS 订阅地址
-    icon: ri:rss-line
-    color: '#ff6600'
+  # rss:
+  #   url: /rss.xml # 站内 RSS 订阅地址
+  #   icon: ri:rss-line
+  #   color: '#ff6600'
   # -------------------------------------------------------------------------
   # 以下是更多可选的社交平台配置示例，取消注释并修改即可启用：
   # -------------------------------------------------------------------------
@@ -213,24 +185,9 @@ social:
 #   - owner: 站长昵称
 #   - desc: 站点描述/简介
 #   - image: 头像图片 URL
-#   - color: (可选) 主题色，十六进制格式；显示在头像外圈和悬停效果上
-#   - group: (可选) 所属分组的 id；未填写或找不到分组时归入「未分组」
-# groups: (可选) 友链分组，按配置顺序展示；不配置则为平铺列表
-#   - id: 分组标识，供友链的 group 引用（唯一）
-#   - title: 分组标题
-#   - description: (可选) 分组说明
+#   - color: (可选) 卡片背景色，十六进制格式
 # -----------------------------------------------------------------------------
 friends:
-  groups:
-    - id: familiar
-      title: 熟人
-      description: 常有交流、彼此熟悉的朋友。
-    - id: community
-      title: 友链小伙伴
-      description: 通过博客结识、交换友链的小伙伴。
-    - id: following
-      title: 单向关注
-      description: 喜欢阅读、推荐给大家的博客。
   intro:
     title: 友情链接 # 页面标题
     subtitle: 欢迎交换友链！ # 页面副标题
@@ -243,63 +200,31 @@ friends:
         desc: 站点简介 # 站点简介
         image: https://your-blog.com/avatar.jpg # 头像链接
         color: "#ffc0cb" # 主题色（可选）
-  data: # 友链列表；同组内按这里的顺序展示
-    - site: 余弦の博客
-      url: https://blog.cosine.ren
-      owner: cos
-      desc: FE / ACG / 手工 / 深色模式强迫症 / INFP / 兴趣广泛养两只猫的老宅女 / remote
-      image: https://blog.cosine.ren/img/avatar.webp
+  data: # 友链列表
+    - site: 我是密探一号
+      url: https://weibo.com/u/5408781232
+      owner: 杭州新城路
+      desc: 曾经知名的雪球带货博主，不知道是不是赵，人称探长
+      image: https://img.lrwy.de5.net/file/1770477919765_image.png
       color: '#ed788b'
-      group: familiar
-    - site: 示例博客 A
-      url: https://example-a.com
-      owner: Alice
-      desc: 一个热爱技术的开发者
-      image: https://api.dicebear.com/7.x/avataaars/svg?seed=Alice
+    - site: 洪灏的宏观策略
+      url: https://weibo.com/7799274131?refer_flag=1001030103_
+      owner: 洪灏
+      desc: 中国策略分析师，莲华资产管理公司管理合伙人
+      image: https://img.lrwy.de5.net/file/1770477305366_image.png
       color: '#BEDCFF'
-      group: familiar
-    - site: 示例博客 B
-      url: https://example-b.com
-      owner: Bob
-      desc: 分享生活与技术的小站
-      image: https://api.dicebear.com/7.x/avataaars/svg?seed=Bob
+    - site: 投星资产
+      url: https://www.weibo.com/u/1319518957
+      owner: 投星资产
+      desc: 深圳市前海朗马投星贸易发展有限公司 投资总监。
+      image: https://img.lrwy.de5.net/file/1770478675899_image.png
       color: '#FBC1CC'
-      group: community
-    - site: 示例博客 C
-      url: https://example-c.com
-      owner: Carol
-      desc: 记录学习与成长的地方
-      image: https://api.dicebear.com/7.x/avataaars/svg?seed=Carol
+    - site: 段永平
+      url: https://xueqiu.com/u/slowisquick
+      owner: 大道无形我有形
+      desc: 买股票就是买公司
+      image: https://img.lrwy.de5.net/file/1770479021449_image.png
       color: '#ABDCFF'
-      group: community
-    - site: 示例博客 D
-      url: https://example-d.com
-      owner: Dave
-      desc: 喜欢折腾键盘和终端
-      image: https://api.dicebear.com/7.x/avataaars/svg?seed=Dave
-      color: '#C8E6C9'
-      group: community
-    - site: 示例博客 E
-      url: https://example-e.com
-      owner: Eve
-      desc: 设计、插画与日常碎碎念
-      image: https://api.dicebear.com/7.x/avataaars/svg?seed=Eve
-      color: '#E1BEE7'
-      group: following
-    - site: 示例博客 F
-      url: https://example-f.com
-      owner: Frank
-      desc: 长文写作与阅读笔记
-      image: https://api.dicebear.com/7.x/avataaars/svg?seed=Frank
-      color: '#FFE0B2'
-      group: following
-    # 不写 group（或写了不存在的分组 id）的友链会归入最后的「未分组」
-    - site: 示例博客 G
-      url: https://example-g.com
-      owner: Grace
-      desc: 还没想好放在哪一组的新朋友
-      image: https://api.dicebear.com/7.x/avataaars/svg?seed=Grace
-      color: '#B2EBF2'
 
 # =============================================================================
 # Announcements
@@ -350,17 +275,6 @@ announcements:
   #   color: '#6366F1'
   #   publishDate: '2025-12-25'
 
-
-# =============================================================================
-# Default Cover List
-# 默认封面列表 - 文章没有指定封面时将随机从列表中选择一张作为封面
-# 不设置则使用内置的 21 张默认封面 (/img/cover/1~21.webp)
-# =============================================================================
-# defaultCoverList:
-#   - /img/cover/1.webp
-#   - https://example.com/custom-cover.webp
-
-
 # =============================================================================
 # Content Processing Options
 # 内容处理选项 - 控制文章渲染和交互行为
@@ -375,7 +289,7 @@ announcements:
 #   enableLinkEmbed: 启用链接卡片预览（解析 OG 信息）
 #   enableTweetEmbed: 启用推文嵌入展示
 #   enableOGPreview: 启用 Open Graph 预览卡片
-#   previewCacheTime: 预览信息缓存时间（天）
+#   previewCacheTime: 预览信息缓存时间（秒）
 #   lazyLoadEmbeds: 延迟加载嵌入内容（提升性能）
 #   postCardImagePosition: 文章卡片封面图位置 (alternating/left/right)
 # -----------------------------------------------------------------------------
@@ -387,176 +301,12 @@ content:
   enableCodeCopy: true # 代码复制按钮
   enableCodeFullscreen: true # 代码全屏按钮
   enableLinkEmbed: true # 链接卡片预览
-  enableCodePenEmbed: true # CodePen 嵌入
   enableTweetEmbed: true # 推文嵌入
   enableOGPreview: true # OG 预览卡片
-  previewCacheTime: 30 # 预览缓存时间(天)
+  previewCacheTime: 3600 # 预览缓存时间(秒)
   lazyLoadEmbeds: true # 延迟加载嵌入
   postCardImagePosition: alternating # 文章卡片封面图位置在首页的显示控制 alternating 默认交替显示 left 封面图始终在左侧 right 封面图始终在右侧
-  # Shoka 兼容功能（默认全部启用，设为 false 可关闭）
-  enableShokaContainers: true   # :::提醒块 ;;;标签卡 +++折叠块
-  enableShokaAttrs: true        # [text]{.class} 属性语法
-  enableShokaEffects: true      # ++下划线++ ==高亮== ~下标~ ^上标^
-  enableShokaSpoiler: true      # !!隐藏文字!!
-  enableShokaRuby: true         # {文字^注音} 注音标注
-  enableShokaHexoTags: true     # {% links %} {% media %} Hexo标签
-  enableMath: true              # $数学公式$ KaTeX渲染
-  enableCodeMeta: true          # 代码块增强 (title, mark, command)
-  enableQuiz: true              # 练习题交互功能
-  enableEncryptedBlock: true    # :::encrypted{password="..."} 加密内容块
-
-# =============================================================================
-# Motion
-# 动效配置 - 站点默认动效强度与樱花特效
-# =============================================================================
-# 字段说明：
-#   level: 访客未手动选择时的默认动效强度，访客可在右下角「设置 → 通用 → 动效强度」中覆盖
-#     lively  灵动：页面入场编排、滚动浮现（含正文）、共享元素过渡、樱花特效
-#     subtle  克制：保留入场与过渡，正文不做滚动浮现，不播放樱花特效
-#     reduced 减弱：关闭装饰性动效，只保留必要的交互反馈
-#   heroPetals: 头图樱花飘落（仅 lively 档生效）
-#   clickBurst: 点击按钮、链接等可交互元素时迸出花瓣（仅 lively 档生效）
-# 系统开启「减少动态效果」(prefers-reduced-motion) 时，始终按 reduced 处理
-# -----------------------------------------------------------------------------
-motion:
-  level: lively
-  heroPetals: true
-  clickBurst: true
-
-# =============================================================================
-# Moments Archive (optional)
-# 碎碎念动态归档 - 默认关闭；启用时还需配置 KOHARU_SUITE_URL 和 dynamic Docker target
-# =============================================================================
-moments:
-  enabled: false
-  path: moments # 支持嵌套路径，例如 life/moments；不要添加首尾斜线
-  title: 碎碎念
-  description: 记录频道中的日常消息
-  # ogImage: /img/moments-og.png
-  # pathAliases:
-  #   - telegram
-  # channels: # 可省略；省略时按 suite 返回结果展示所有公开频道
-  #   - id: 550e8400-e29b-41d4-a716-446655440000
-  #     slug: daily
-  #     title: 日常
-  #     primary: true
-  #     hidden: false
-  #     ogImage: /img/daily-og.png
-  #     aliases:
-  #       - old-daily
-
-# =============================================================================
-# Writing Room
-# 写作室 - 默认关闭，开启后生成 /editor/ 和 /editor/preview/，并显示已有导航入口
-# 使用本地 CMS 编辑文章时也需要开启；修改后重启开发服务器或重新构建
-# =============================================================================
-editor:
-  enabled: true
-
-# =============================================================================
-# Colophon (落款)
-# 文章落款 - 为文章标注创作方式、阅读提示等，字典在这里定义，文章 frontmatter 引用
-# =============================================================================
-# 用法（文章 frontmatter）：
-#   colophon: [ai-cowrite, spoiler]
-#   colophon:
-#     - ai-cowrite
-#     - { id: spoiler, note: 含《我推的孩子》第二季剧透 }   # note：本篇自己的补充说明
-#     - { icon: fa6-solid:cat, label: 猫猫审阅过 }          # 一次性标记，不进字典
-# 字段说明：
-#   groups.<id>.label: 分组名称（显示在文末落款）
-#   groups.<id>.exclusive: 是否互斥，互斥组一篇文章只能选一个（默认 false）
-#   groups.<id>.placement / marks.<id>.placement: 显示位置，可多选（标记优先，其次分组，默认 [meta, seal]）
-#     meta   封面信息行（字数、阅读时长旁）
-#     banner 正文前的提示条
-#     seal   文末落款
-#     card   文章列表卡片上的小图标
-#   marks.<id>.icon: Iconify 图标，限 ri / fa6-solid / fa6-regular / gg 四套（见 src/lib/config/icon-sets.ts）
-#   marks.<id>.tone: muted（默认）| accent | warn
-#   defaults: 默认标记，文章没有该组的标记时自动补上（每组最多一个）；文章写 colophon: [] 可不显示任何标记
-# 多语言：在 config/i18n-content.yaml 的 <locale>.colophon 下覆盖 groups / marks 文案
-# 删除整个 colophon 段落即可关闭此功能
-# -----------------------------------------------------------------------------
-colophon:
-  enabled: true
-  defaults: [handwritten] # 没写执笔的文章默认显示「手写」
-  groups:
-    authorship:
-      label: 执笔
-      exclusive: true
-      placement: [meta, seal, card]
-    notice:
-      label: 阅读提示
-      placement: [meta, banner]
-    # ai:
-    #   label: AI 参与
-    #   placement: [seal]
-    # art:
-    #   label: 图像
-    #   placement: [seal]
-    # status:
-    #   label: 文章状态
-    #   placement: [meta, seal]
-    # mood:
-    #   label: 写作时
-    #   placement: [seal]
-  marks:
-    handwritten:
-      group: authorship
-      icon: ri:quill-pen-line
-      label: 手写
-      description: 每个字都是我自己敲的。
-    ai-cowrite:
-      group: authorship
-      icon: ri:sparkling-2-line
-      label: 与 AI 合写
-      description: 我主笔，AI 帮我理思路、换说法。
-    ai-lead:
-      group: authorship
-      icon: ri:sparkling-2-fill
-      label: AI 主笔
-      description: 正文主要由 AI 起草，我负责挑选和改写。
-    spoiler:
-      group: notice
-      icon: ri:eye-off-line
-      label: 含剧透
-      description: 涉及作品后续剧情，还没看完的话可以先收藏。
-      tone: warn
-    outdated:
-      group: notice
-      icon: ri:hourglass-line
-      label: 可能已过时
-      description: 写得比较早，文中的版本和做法可能已经变了。
-      tone: warn
-    # ai-idea: { group: ai, icon: ri:lightbulb-flash-line, label: 构思, description: 和 AI 聊过选题与结构。 }
-    # ai-polish: { group: ai, icon: ri:magic-line, label: 润色, description: AI 帮忙改过措辞和错字。 }
-    # ai-code: { group: ai, icon: ri:code-s-slash-line, label: 代码, description: 示例代码有 AI 参与编写。 }
-    # ai-translate: { group: ai, icon: ri:translate-2, label: 翻译, description: 译文由 AI 初译，我校对过。 }
-    # self-drawn: { group: art, icon: ri:brush-line, label: 自己画的, description: 文中插图是我自己画的。 }
-    # photo: { group: art, icon: ri:camera-3-line, label: 自己拍的, description: 照片都是我自己拍的。 }
-    # ai-art: { group: art, icon: ri:image-ai-line, label: AI 配图, description: 文中有 AI 生成或协作绘制的图。 }
-    # ongoing: { group: status, icon: ri:refresh-line, label: 持续更新, description: 这篇会不定期补充。 }
-    # wip: { group: status, icon: ri:seedling-line, label: 未完待续, description: 坑还没填完，后面会接着写。 }
-    # late-night: { group: mood, icon: ri:moon-clear-line, label: 深夜写的 }
-    # one-sitting: { group: mood, icon: ri:cup-line, label: 一口气写完 }
-
-# =============================================================================
-# Post Actions
-# 文章操作 - 面包屑右侧的「复制 Markdown」按钮组
-# =============================================================================
-# 字段说明：
-#   copyMarkdown: 复制全文 Markdown（含 frontmatter）
-#   downloadMarkdown: 下载 .md 文件
-#   openInEditor: 在写作室打开，需要 editor.enabled
-#     off      不显示
-#     dev      仅本地开发服务器显示
-#     everyone 所有访客可见，访客打开的是一份浏览器草稿副本，不会改动博客
-# 加密文章（password）不提供原文，也不显示这些按钮
-# -----------------------------------------------------------------------------
-postActions:
-  copyMarkdown: true
-  downloadMarkdown: true
-  openInEditor: everyone
+  enableEncryptedBlock: true # 【本地定制】整篇密码加密 + :::encrypted 加密块（v7.7.4 新增，默认关闭，必须显式开启）
 
 # =============================================================================
 # Navigation Routes
@@ -573,51 +323,158 @@ postActions:
 #   - Remix Icon: https://icon-sets.iconify.design/ri/
 # -----------------------------------------------------------------------------
 navigation:
-  - name: 首页 # 菜单显示名称（nameKey 不存在时的回退文本）
-    nameKey: nav.home # i18n 翻译 key
+  - name: 首页 # 菜单显示名称
     path: / # 链接路径
     icon: ri:home-heart-fill # 图标
   # - name: 书摘
   #   path: /reading
   - name: 周刊
-    nameKey: nav.weekly
     path: /weekly
     icon: ri:newspaper-line
-  # Optional explicit Moments position. When omitted, enabled Moments is inserted after Archives.
-  # - feature: moments
-  #   icon: ri:chat-smile-3-fill
+  - name: 财经A
+    icon: ri:stock-fill
+    children:
+      - name: 财联社
+        path: https://www.cls.cn/
+        icon: ri:flashlight-fill
+      - name: 集思录
+        path: https://www.jisilu.cn/data/lof/#index
+        icon: ri:copper-coin-line
+      - name: 龙虎榜
+        path: https://data.10jqka.com.cn/market/longhu/
+        icon: ri:fire-fill
+      - name: 格隆汇
+        path: https://www.gelonghui.com/
+        icon: ri:compass-3-fill
+      - name: 大时代
+        path: https://bbs.nga.cn/thread.php?fid=706&rand=554
+        icon: ri:gamepad-line
+      - name: 新浪财经
+        path: https://finance.sina.com.cn/
+        icon: ri:weibo-fill      
+      - name: 金十数据
+        path: https://www.jin10.com/
+        icon: ri:timer-flash-line   
+      - name: 萝卜投研
+        path: https://robo.datayes.com/
+        icon: ri:leaf-fill
+      - name: 前沿知识库
+        path: https://wk.askci.com/
+        icon: ri:file-word-2-fill    
+      - name: 免费资源hi189
+        path: https://hi189.com/category/gupiaoqihuo
+        icon: ri:timer-flash-line
+      - name: 缠中说禅
+        path: https://chzhshch.blog/
+        icon: ri:leaf-fill
+
+  - name: 股吧
+    icon: ri:funds-line
+    children:
+      - name: 雪球
+        path: https://xueqiu.com/
+        icon: ri:bubble-chart-fill
+      - name: 淘股吧
+        path: https://www.tgb.cn/
+        icon: ri:chat-voice-fill
+      - name: 韭菜公社
+        path: https://www.jiuyangongshe.com/
+        icon: ri:leaf-line
+      - name: 东方财富
+        path: https://www.eastmoney.com/
+        icon: ri:line-chart-line
+
+  - name: 化工
+    icon: ri:flask-line
+    children:
+      - name: 化工网
+        path: https://china.chemnet.com/
+        icon: ri:flask-fill
+      - name: 百川盈孚
+        path: https://www.baiinfo.com/
+        icon: ri:database-2-line
+      - name: 卓创资讯
+        path: https://www.sci99.com/
+        icon: ri:bar-chart-box-line
+      - name: 隆众资讯
+        path: https://www.oilchem.net/
+        icon: ri:drop-line
+      - name: 中国化工信息网
+        path: https://library.cheminfo.cn/index
+        icon: ri:test-tube-line
+
+  - name: 涨价
+    icon: ri:rocket-line
+    children:
+      - name: 生意社
+        path: https://www.100ppi.com/
+        icon: ri:heavy-showers-line
+      - name: 上海有色网
+        path: https://www.smm.cn/
+        icon: ri:bar-chart-box-line
+      - name: 全球半导体观察
+        path: https://www.dramx.com/
+        icon: ri:cpu-line
+      - name: CFM 闪存市场
+        path: https://www.chinaflashmarket.com/
+        icon: ri:cpu-line
+      - name: 上海航运交易所
+        path: https://www.sse.net.cn/home
+        icon: ri:ship-2-line
+
+  - name: 港美
+    icon: ri:money-cny-box-line
+    children:
+      - name: 披露易
+        path: https://www.hkexnews.hk/index_c.htm
+        icon: ri:stock-line
+      - name: 华尔街见闻
+        path: https://wallstreetcn.com/
+        icon: ri:money-cny-box-line
+      - name: 交易视图 (TV)
+        path: https://cn.tradingview.com/
+        icon: ri:rhythm-line
+      - name: 高盛做空排名
+        path: https://www.highshortinterest.com/
+        icon: ri:stock-line
+
+  - name: 券商频道
+    icon: ri:funds-line
+    children:
+      - name: 长桥学堂
+        path: https://longbridge.com/zh-CN/academy?channel=WHAB0002
+        icon: ri:stock-line
+      - name: 牛牛课堂
+        path: https://www.futunn.com/learn
+        icon: ri:money-cny-box-line
+      - name: 华盛课堂
+        path: https://www.hstong.com/course/home
+        icon: ri:rhythm-line
+      - name: 老虎学堂
+        path: https://www.laohu8.com/college
+        icon: ri:stock-line
+      - name: 盈立学堂
+        path: https://hk.usmartglobal.com/zh-cn/special-list
+        icon: ri:stock-line
+
   - name: 文章 # 有子菜单时，path 可省略
-    nameKey: nav.posts
     icon: ri:quill-pen-ai-fill
     children: # 子菜单列表
       - name: 分类
-        nameKey: nav.categories
         path: /categories
         icon: ri:grid-fill
       - name: 标签
-        nameKey: nav.tags
         path: /tags
         icon: fa6-solid:tags
       - name: 归档
-        nameKey: nav.archives
         path: /archives
         icon: ri:archive-2-fill
   - name: 友链
-    nameKey: nav.friends
     path: /friends
     icon: ri:links-line
-  - name: 关于
-    nameKey: nav.about
+  - name: 须知
     path: /about
     icon: fa6-regular:circle-user
-  - name: 歌单
-    nameKey: nav.music
-    path: /music
-    icon: ri:music-2-fill
-  - name: 写作室
-    path: /editor
-    localeIndependent: true
-    icon: ri:edit-box-line
 
 # =============================================================================
 # Christmas/Seasonal Features
@@ -643,7 +500,7 @@ navigation:
 # =============================================================================
 # Comment System
 # =============================================================================
-# provider: 评论系统提供商 ('remark42' | 'giscus' | 'waline' | 'twikoo' | 'none')
+# provider: 评论系统提供商 ('remark42' | 'giscus' | 'waline' | 'none')
 #           设为 'none' 或不设置时禁用评论系统
 # 各提供商配置：
 # -----------------------------------------------------------------------------
@@ -697,13 +554,8 @@ navigation:
 #     recaptchaV3Key: reCAPTCHA v3 Key (可选)
 #     turnstileKey: Cloudflare Turnstile Key (可选)
 #     locale: 自定义语言显示 (可选)
-  # twikoo:
-    # envId: # Twikoo 环境 ID (腾讯云) 或 Vercel 环境地址 (必填)
-    # region: # 环境地域，默认为 ap-shanghai
-    # path: # 用于区分不同文章的自定义 js 路径，如果您的文章路径不是 location.pathname，需传此参数
-    # lang: # 语言 (默认: 'zh-CN')
 comment:
-  provider: none  # 'remark42' | 'giscus' | 'waline' | 'twikoo' | 'none'
+  provider: waline  # 'remark42' | 'giscus' | 'waline' | 'none'
   # remark42:
   #   host: https://comment.example.com/
   #   siteId: your-site-id
@@ -718,48 +570,43 @@ comment:
   #   inputPosition: top               # 输入框位置 ('top' | 'bottom')
   #   lang: zh-CN                      # 语言
 
-  # waline:
-  #   serverURL: https://your-waline.vercel.app  # Waline 服务端地址 (必填)
-  #   lang: zh-CN                      # 语言 (默认: 'zh-CN')
-  #   dark: html.dark                  # 暗黑模式 (默认: 'html.dark')
-  #                                    # 可选: true (自适应) | false (禁用) | CSS选择器字符串
-  #   meta:                            # 评论者信息字段 (默认: ['nick', 'mail', 'link'])
-  #     - nick
-  #     - mail
-  #     - link
-  #   requiredMeta:                    # 必填字段 (默认: [])
-  #     - nick
-  #   login: enable                    # 登录模式 ('enable' | 'disable' | 'force', 默认: 'enable')
-  #   wordLimit: 0                     # 评论字数限制 (0 = 无限制, 默认: 0)
-  #                                    # 可选: 单个数字 | [min, max] 数组
-  #   pageSize: 10                     # 每页评论数 (默认: 10)
-  #   imageUploader: false             # 图片上传功能 (默认: false)
-  #   highlighter: true                # 代码高亮 (默认: true)
-  #   texRenderer: false               # LaTeX 渲染 (默认: false)
-  #   search: false                    # 搜索功能 (默认: false)
-  #   reaction: false                  # 文章反应功能 (默认: false)
-  #                                    # 可选: true | false | 字符串数组 (自定义反应图标)
-  #   emoji: true                      # 表情包配置 (默认: ['//unpkg.com/@waline/emojis@1.2.0/weibo'])
-  #                                    # 可选: true | false | 字符串/对象数组
-  #                                    # 预设表情包: '//unpkg.com/@waline/emojis@1.2.0/weibo'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/alus'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/bilibili'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/qq'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/tieba'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/tw-emoji'
-  #   commentSorting: latest           # 评论排序 ('latest' | 'oldest' | 'hottest', 默认: 'latest')
-  #   noCopyright: false               # 隐藏页脚版权信息 (默认: false)
-  #   comment: true                    # 评论数统计 (默认: true)
-  #   pageview: true                   # 页面访问量统计 (默认: true)
-  #   # recaptchaV3Key: ''             # reCAPTCHA v3 Key (可选)
-  #   # turnstileKey: ''               # Cloudflare Turnstile Key (可选)
-  #   # locale:                        # 自定义语言显示 (可选)
-  #   #   placeholder: '请留言...'      # 自定义输入框占位文本
-  twikoo:
-    envId: https://your-twikoo.vercel.app  # Twikoo 环境 ID (腾讯云) 或 Vercel 环境地址 (必填)
-    # region: ap-shanghai              # 环境地域，默认为 ap-shanghai
-    # path: location.pathname          # 用于区分不同文章的自定义 js 路径
-    # lang: zh-CN                     # 语言 (默认: 'zh-CN')
+  waline:
+    serverURL: https://waline.nephren.de5.net  # Waline 服务端地址 (必填)
+    lang: zh-CN                      # 语言 (默认: 'zh-CN')
+    dark: html.dark                  # 暗黑模式 (默认: 'html.dark')
+                                     # 可选: true (自适应) | false (禁用) | CSS选择器字符串
+    meta:                            # 评论者信息字段 (默认: ['nick', 'mail', 'link'])
+      - nick
+      - mail
+      - link
+    requiredMeta:                    # 必填字段 (默认: [])
+      - nick
+    login: enable                    # 登录模式 ('enable' | 'disable' | 'force', 默认: 'enable')
+    wordLimit: 0                     # 评论字数限制 (0 = 无限制, 默认: 0)
+                                     # 可选: 单个数字 | [min, max] 数组
+    pageSize: 10                     # 每页评论数 (默认: 10)
+    imageUploader: false             # 图片上传功能 (默认: false)
+    highlighter: true                # 代码高亮 (默认: true)
+    texRenderer: false               # LaTeX 渲染 (默认: false)
+    search: false                    # 搜索功能 (默认: false)
+    reaction: false                  # 文章反应功能 (默认: false)
+                                     # 可选: true | false | 字符串数组 (自定义反应图标)
+    emoji: true                      # 表情包配置 (默认: ['//unpkg.com/@waline/emojis@1.2.0/weibo'])
+                                     # 可选: true | false | 字符串/对象数组
+                                     # 预设表情包: '//unpkg.com/@waline/emojis@1.2.0/weibo'
+                                     #           '//unpkg.com/@waline/emojis@1.2.0/alus'
+                                     #           '//unpkg.com/@waline/emojis@1.2.0/bilibili'
+                                     #           '//unpkg.com/@waline/emojis@1.2.0/qq'
+                                     #           '//unpkg.com/@waline/emojis@1.2.0/tieba'
+                                     #           '//unpkg.com/@waline/emojis@1.2.0/tw-emoji'
+    commentSorting: latest           # 评论排序 ('latest' | 'oldest' | 'hottest', 默认: 'latest')
+    noCopyright: false               # 隐藏页脚版权信息 (默认: false)
+    comment: true                    # 评论数统计 (默认: true)
+    pageview: true                   # 页面访问量统计 (默认: true)
+    # recaptchaV3Key: ''             # reCAPTCHA v3 Key (可选)
+    # turnstileKey: ''               # Cloudflare Turnstile Key (可选)
+    # locale:                        # 自定义语言显示 (可选)
+    #   placeholder: '请留言...'      # 自定义输入框占位文本
 
 # =============================================================================
 # Analytics (Umami)
@@ -767,20 +614,12 @@ comment:
 # id: Umami 网站 ID
 # endpoint: Umami 服务器地址
 # enabled: 是否启用统计
-# statistics_display: 统计信息显示配置
-#   token: Umami 分享链接令牌（只读，可安全暴露到客户端）
-#   article_page_views: 在文章详情页显示访问量
-#   footer_site_stats: 在页脚 Site Stats 中显示全站访问量
 # -----------------------------------------------------------------------------
 analytics:
   umami:
     enabled: true
     id: your-umami-id
     endpoint: https://stats.example.com
-    # statistics_display:
-    #   token: your-umami-share-token
-    #   article_page_views: true
-    #   footer_site_stats: true
 
 # =============================================================================
 # SEO Configuration
@@ -805,17 +644,6 @@ seo:
 # =============================================================================
 # Christmas/Seasonal Features
 # =============================================================================
-bgm:
-  enabled: true  # (有 audio 时自动启用，显式 false 可禁用)
-  # metingApi: https://163.hyc.moe/  # Meting API 地址，默认为 https://163.hyc.moe/，推荐自部署
-  audio:
-    - title: 最爱山山
-      list:
-        - https://music.163.com/playlist?id=8676645748
-    - title: Love Vocaloid
-      list:
-        - https://music.163.com/playlist?id=8882890045
-
 christmas:
   enabled: false # 总开关
   # features: # 各功能独立开关
@@ -832,20 +660,6 @@ christmas:
   #   maxIterations: 8 # 最大迭代次数
   #   mobileMaxLayers: 4 # 移动端最大层数
   #   mobileMaxIterations: 6 # 移动端最大迭代次数
-
-# =============================================================================
-# Bangumi (Media Tracking)
-# 追番页面 - 注释掉整个 bangumi 段即可关闭（页面 + 导航自动隐藏）
-# =============================================================================
-# 字段说明：
-#   userId: Bangumi 用户名或数字 ID（必填）
-#   label: 导航显示名称（可选，默认：追番）
-#   icon: 导航图标，Iconify 格式（可选，默认：ri:bilibili-fill）
-# -----------------------------------------------------------------------------
-bangumi:
-  userId: cosine
-  # label: 追番
-  # icon: ri:bilibili-fill
 
 # =============================================================================
 # Development Tools (Dev Only)
@@ -868,12 +682,159 @@ dev:
     - id: vscode
       name: VS Code
       icon: devicon-plain:vscode
-      urlTemplate: 'vscode://file/{path}'
+      urlTemplate: 'vscode://file{path}'
     - id: cursor
       name: Cursor
       icon: simple-icons:cursor
-      urlTemplate: 'cursor://file/{path}'
+      urlTemplate: 'cursor://file{path}'
     - id: zed
       name: Zed
       icon: simple-icons:zedindustries
-      urlTemplate: 'zed://file/{path}'
+      urlTemplate: 'zed://file{path}'
+
+# =============================================================================
+# 以下为 v7.7.4 新增配置段（跟随上游升级补齐，默认均为关闭/保守值）
+# =============================================================================
+
+# =============================================================================
+# 默认封面列表 - 文章没有指定封面时随机选取
+# 本地定制：共 90 张（/img/cover/1.webp ~ /img/cover/90.webp，连续无缺口）
+# =============================================================================
+defaultCoverList:
+  - /img/cover/1.webp
+  - /img/cover/2.webp
+  - /img/cover/3.webp
+  - /img/cover/4.webp
+  - /img/cover/5.webp
+  - /img/cover/6.webp
+  - /img/cover/7.webp
+  - /img/cover/8.webp
+  - /img/cover/9.webp
+  - /img/cover/10.webp
+  - /img/cover/11.webp
+  - /img/cover/12.webp
+  - /img/cover/13.webp
+  - /img/cover/14.webp
+  - /img/cover/15.webp
+  - /img/cover/16.webp
+  - /img/cover/17.webp
+  - /img/cover/18.webp
+  - /img/cover/19.webp
+  - /img/cover/20.webp
+  - /img/cover/21.webp
+  - /img/cover/22.webp
+  - /img/cover/23.webp
+  - /img/cover/24.webp
+  - /img/cover/25.webp
+  - /img/cover/26.webp
+  - /img/cover/27.webp
+  - /img/cover/28.webp
+  - /img/cover/29.webp
+  - /img/cover/30.webp
+  - /img/cover/31.webp
+  - /img/cover/32.webp
+  - /img/cover/33.webp
+  - /img/cover/34.webp
+  - /img/cover/35.webp
+  - /img/cover/36.webp
+  - /img/cover/37.webp
+  - /img/cover/38.webp
+  - /img/cover/39.webp
+  - /img/cover/40.webp
+  - /img/cover/41.webp
+  - /img/cover/42.webp
+  - /img/cover/43.webp
+  - /img/cover/44.webp
+  - /img/cover/45.webp
+  - /img/cover/46.webp
+  - /img/cover/47.webp
+  - /img/cover/48.webp
+  - /img/cover/49.webp
+  - /img/cover/50.webp
+  - /img/cover/51.webp
+  - /img/cover/52.webp
+  - /img/cover/53.webp
+  - /img/cover/54.webp
+  - /img/cover/55.webp
+  - /img/cover/56.webp
+  - /img/cover/57.webp
+  - /img/cover/58.webp
+  - /img/cover/59.webp
+  - /img/cover/60.webp
+  - /img/cover/61.webp
+  - /img/cover/62.webp
+  - /img/cover/63.webp
+  - /img/cover/64.webp
+  - /img/cover/65.webp
+  - /img/cover/66.webp
+  - /img/cover/67.webp
+  - /img/cover/68.webp
+  - /img/cover/69.webp
+  - /img/cover/70.webp
+  - /img/cover/71.webp
+  - /img/cover/72.webp
+  - /img/cover/73.webp
+  - /img/cover/74.webp
+  - /img/cover/75.webp
+  - /img/cover/76.webp
+  - /img/cover/77.webp
+  - /img/cover/78.webp
+  - /img/cover/79.webp
+  - /img/cover/80.webp
+  - /img/cover/81.webp
+  - /img/cover/82.webp
+  - /img/cover/83.webp
+  - /img/cover/84.webp
+  - /img/cover/85.webp
+  - /img/cover/86.webp
+  - /img/cover/87.webp
+  - /img/cover/88.webp
+  - /img/cover/89.webp
+  - /img/cover/90.webp
+
+# --- 多语言 (i18n) ---
+# 当前仅启用中文，locale 数量 <= 1 时多语言路由不会启用。
+# 想开英文站：在此追加 - code: en / label: English，并为文章建立 src/content/blog/en/ 目录。
+i18n:
+  defaultLocale: zh
+  locales:
+    - code: zh
+      label: 中文
+
+# --- 动效 ---
+# 可选值: lively（活泼）/ subtle（克制）/ reduced（关闭）
+motion:
+  level: subtle
+  heroPetals: false
+  clickBurst: false
+
+# --- 碎碎念动态归档 ---
+# 开启还需配置 KOHARU_SUITE_URL 环境变量
+moments:
+  enabled: false
+  path: moments
+  title: 碎碎念
+  description: 记录频道中的日常消息
+
+# --- 写作室 (本地 CMS 文章编辑页) ---
+editor:
+  enabled: false
+
+# --- 文章落款 ---
+colophon:
+  enabled: false
+
+# --- 文章操作按钮 ---
+postActions:
+  copyMarkdown: true
+  downloadMarkdown: true
+  openInEditor: everyone
+
+# --- 背景音乐 ---
+bgm:
+  enabled: false
+
+# --- 追番 (Bangumi) ---
+# 填自己的 bilibili 用户 ID 才生效；留空即不显示
+bangumi:
+  userId: ''

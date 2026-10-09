@@ -1,12 +1,4 @@
 {
-  "https://zhuanlan.zhihu.com/p/1900483903984243480": {
-    "data": {
-      "originUrl": "https://zhuanlan.zhihu.com/p/1900483903984243480",
-      "url": "https://zhuanlan.zhihu.com/p/1900483903984243480",
-      "error": "Failed to fetch: 403"
-    },
-    "timestamp": 1791230573480
-  },
   "https://react-tweet.vercel.app/": {
     "data": {
       "originUrl": "https://react-tweet.vercel.app/",
@@ -61,5 +53,16 @@
       "logo": "https://book.cosine.ren/~gitbook/image?url=https%3A%2F%2F934551782-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FSKmC7C4KtqVvJxUTVKwQ%252Ficon%252FWcaoWRW35EESs2lJLWyW%252Ftx.jpg%3Falt%3Dmedia%26token%3Dde2dd12e-60c6-4078-8049-1f37d3c7e3ec&width=48&height=48&sign=f362d5b490eeeab73148e3c4b0c680c3&sv=3"
     },
     "timestamp": 1791303373964
+  },
+  "https://github.com/fat7/KLinePlayground": {
+    "data": {
+      "originUrl": "https://github.com/fat7/KLinePlayground",
+      "url": "https://github.com/fat7/KLinePlayground",
+      "title": "GitHub - fat7/KLinePlayground: 这是一个基于 PyWebView、Flask 和 Lightweight Charts 构建的A股K线复盘训练桌面应用。它允许用户在真实的历史行情数据上进行模拟交易，以训练和提升自己的盘感、策略和决策能力。",
+      "description": "这是一个基于 PyWebView、Flask 和 Lightweight Charts 构建的A股K线复盘训练桌面应用。它允许用户在真实的历史行情数据上进行模拟交易，以训练和提升自己的盘感、策略和决策能力。 - fat7/KLinePlayground",
+      "image": "https://opengraph.githubassets.com/b572c619c83d8da5f69280f753d70c65a9d5e8bdeac3a953837f480a370791e2/fat7/KLinePlayground",
+      "logo": "https://github.com/fluidicon.png"
+    },
+    "timestamp": 1791561269303
   }
 }

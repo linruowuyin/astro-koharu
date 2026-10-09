@@ -1,24 +1,28 @@
 :root {
-  --gradient-bg-start: #fdfbfb;
-  --gradient-bg-end: #ebedee;
+  /* ---- 本地定制：整体由粉红主题改为蓝色系 ---- */
+  --gradient-bg-start: #f8fafc;
+  --gradient-bg-end: #f1f5f9;
   --gradient-bg: linear-gradient(180deg, var(--gradient-bg-start) 10%, var(--gradient-bg-end) 100%);
-  --gradient-pink: linear-gradient(279deg, #f96676 0%, #e91e63 100%);
-  --gradient-header: linear-gradient(-225deg, #e3fdf5 0, #ffe6fa 100%);
+  /* 按钮和点缀改为更有层次的蓝 */
+  --gradient-pink: linear-gradient(279deg, #3b82f6 0%, #1d4ed8 100%);
+  /* 顶部导航条背景：改为淡淡的冰水色 */
+  --gradient-header: linear-gradient(-225deg, #f0f9ff 0, #e0f2fe 100%);
 
   /* shoka migrate */
-  --box-bg-shadow: rgba(0, 0, 0, 0.1);
-  --grey-1-a5: rgba(253, 253, 253, 0.5);
-  --gradient-shoka-button-start: #ed6ea0;
-  --gradient-shoka-button-end: #ec8c69;
+  --box-bg-shadow: rgba(0, 0, 0, 0.05);
+  --grey-1-a5: rgba(248, 250, 252, 0.5);
+
+  --gradient-shoka-button-start: #60a5fa;
+  --gradient-shoka-button-end: #2563eb;
   --gradient-shoka-button: linear-gradient(
     to right,
     var(--gradient-shoka-button-start) 0,
     var(--gradient-shoka-button-end) 100%
   );
-  --shoka-blue: 201 69% 54%;
+  --shoka-blue: 213 80% 48%;
   --grey-4: 0 0% 80%;
-  --color-pink: #ed6ea0;
-  --color-pink-a3: rgba(237, 110, 160, 0.3);
+  --color-pink: #2563eb;
+  --color-pink-a3: rgba(37, 99, 235, 0.1);
 
   /* Shoka container/effect colors (primary uses --primary from shadcn theme) */
   --shoka-default: 0 0% 40%;
@@ -29,7 +33,7 @@
 
   /* Named text colors — adapted for light/dark mode readability */
   --color-red: #e74c3c;
-  --color-pink-text: #e91e63;
+  --color-pink-text: #d6336c;
   --color-orange: #f39c12;
   --color-yellow: #d4a017;
   --color-green: #27ae60;
@@ -40,27 +44,29 @@
 }
 
 .dark {
-  --gradient-bg-start: #1d1a27;
-  --gradient-bg-end: #15121d;
+  /* ---- 本地定制：深色模式蓝色系 ---- */
+  --gradient-bg-start: #0f172a;
+  --gradient-bg-end: #020617;
   --gradient-bg: linear-gradient(180deg, var(--gradient-bg-start) 10%, var(--gradient-bg-end) 100%);
-  --gradient-pink: linear-gradient(279deg, #f96676 0%, #e91e63 100%);
-  --gradient-header: linear-gradient(-225deg, #2a2438 0, #372739 100%);
+  --gradient-pink: linear-gradient(279deg, #0ea5e9 0%, #2563eb 100%);
+  --gradient-header: linear-gradient(-225deg, #1e293b 0, #0f172a 100%);
 
   /* shoka migrate */
-  --box-bg-shadow: rgba(6, 2, 16, 0.55);
-  --grey-1-a5: rgba(29, 26, 39, 0.5);
+  --box-bg-shadow: rgba(0, 0, 0, 0.5);
+  --grey-1-a5: rgba(30, 41, 59, 0.5);
 
-  --gradient-shoka-button-start: #f18bb3cc;
-  --gradient-shoka-button-end: #f0a387cc;
+  --gradient-shoka-button-start: #0ea5e9cc;
+  --gradient-shoka-button-end: #2563ebcc;
   --gradient-shoka-button: linear-gradient(
     to right,
     var(--gradient-shoka-button-start) 0,
     var(--gradient-shoka-button-end) 100%
   );
-  --shoka-blue: 201 69% 77%;
-  --grey-4: 262 8% 42%;
-  --color-pink: #f18bb3;
-  --color-pink-a3: rgba(237, 110, 160, 0.3);
+  --shoka-blue: 199 89% 48%;
+  /* 跟随深色蓝灰底色调成 slate 冷灰，避免紫灰与蓝底冲突 */
+  --grey-4: 215 20% 42%;
+  --color-pink: #38bdf8;
+  --color-pink-a3: rgba(56, 189, 248, 0.3);
 
   /* Shoka container/effect colors (dark mode) */
   --shoka-default: 0 0% 60%;

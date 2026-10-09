@@ -8,6 +8,7 @@ import { MAX_WIDTH } from '@constants/layout';
 import { christmasConfig, siteConfig } from 'constants/site-config';
 import { getLocaleFromUrl, localizedPath } from '@/i18n';
 import Navigator from './Navigator';
+import StockBar from './StockBar.astro'; // 本地定制：顶部行情条
 
 interface Props {
   isPostPage?: boolean;
@@ -21,9 +22,12 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
 
 <div
   id="site-header"
-  class={`shadow-text fixed tablet:backdrop-blur inset-x-0 top-0 z-30 gap-4 py-2.5 text-white select-none tablet:py-2 tablet:pl-3 tablet:pr-0 overflow-visible`}
+  class={`shadow-text fixed tablet:backdrop-blur inset-x-0 top-0 z-30 flex flex-col gap-4 text-white select-none tablet:pl-3 overflow-visible`}
 >
-  <div class={`header-inner mx-auto tablet:w-full px-6 tablet:pl-0 tablet:pr-3 ${MAX_WIDTH.content}`}>
+  {/* 本地定制：TradingView 行情条，按北京时间自动切换 A股 / 美股 */}
+  <StockBar />
+
+  <div class={`header-inner mx-auto tablet:w-full px-6 py-2.5 tablet:py-2 tablet:pl-0 tablet:pr-3 ${MAX_WIDTH.content}`}>
     <div class="header-capsule" aria-hidden="true"></div>
     <div class="header-content tablet:grid tablet:grid-cols-[minmax(3rem,1fr)_auto_1fr] tablet:gap-x-3 flex items-center justify-between">
       <!-- Desktop: Always show logo -->

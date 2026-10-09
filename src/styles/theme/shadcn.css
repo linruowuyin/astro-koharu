@@ -1,72 +1,74 @@
-/* shadCN theme - https://ui.shadcn.com/themes */
+/* shadCN theme - 萌系天蓝定制版（本地定制，移植自 v2.5.3 时期的蓝色方案） */
 @layer base {
   :root {
-    /* Neutrals lean toward the sakura hue so greys and the pink accent read as one palette. */
-    --background: 0 12% 99%;
-    --foreground: 340 10% 18%;
+    /* 背景使用非常清透的奶油白 */
+    --background: 210 50% 99%;
+    --foreground: 222 47% 20%;
 
-    --card: 0 12% 99%;
-    --card-foreground: 340 12% 12%;
+    --card: 210 50% 99%;
+    --card-foreground: 222 47% 20%;
 
-    --popover: 0 12% 99%;
-    --popover-foreground: 340 12% 12%;
+    --popover: 210 50% 99%;
+    --popover-foreground: 222 47% 20%;
 
-    --primary: 351 77% 62%;
-    --primary-foreground: 355.7 100% 97.3%;
+    /* 【核心修改】天蓝色：像晴朗天空一样的浅蓝色 */
+    --primary: 199 85% 65%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 340 22% 95.5%;
-    --secondary-foreground: 340 12% 12%;
+    --secondary: 199 60% 94%;
+    --secondary-foreground: 199 80% 30%;
 
-    --muted: 340 22% 95.5%;
-    --muted-foreground: 340 6% 36%;
+    --muted: 199 60% 94%;
+    --muted-foreground: 199 20% 50%;
 
-    --accent: 340 30% 94.5%;
-    --accent-foreground: 340 12% 12%;
+    --accent: 199 60% 94%;
+    --accent-foreground: 199 80% 30%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 80%; /* 连报错都变萌的淡粉红 */
+    --destructive-foreground: 0 0% 20%;
 
-    --border: 340 16% 90%;
-    --input: 340 16% 90%;
-    --ring: 346.8 77.2% 49.8%;
+    --border: 199 60% 90%;
+    --input: 199 60% 90%;
+    --ring: 199 85% 65%;
 
-    --badge-primary: 351 49% 50%;
+    --badge-primary: 199 80% 60%;
 
-    --radius: 0.75rem;
+    /* 【萌化关键】增加圆角感 */
+    --radius: 1rem;
   }
 
   .dark {
-    /* Night sakura: plum-indigo neutrals under an unchanged pink accent; text is kept below pure white to cut glare. */
-    --background: 256 18% 13%;
-    --foreground: 300 14% 93%;
+    /* 暗色模式保持这种蓝色的“霓虹淡化版”，不至于太刺眼 */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
 
-    --card: 256 18% 15%;
-    --card-foreground: 300 14% 93%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 257 20% 16%;
-    --popover-foreground: 300 14% 93%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 350 77% 70%;
-    --primary-foreground: 355.7 100% 97.3%;
+    --primary: 199 80% 70%;
+    --primary-foreground: 222 47% 11%;
 
-    --secondary: 258 16% 21%;
-    --secondary-foreground: 300 14% 96%;
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 258 16% 21%;
-    --muted-foreground: 262 10% 68%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 258 18% 23%;
-    --accent-foreground: 300 14% 96%;
+    --accent: 217 32% 17%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
 
-    --border: 258 14% 25%;
-    --input: 258 14% 25%;
-    --ring: 346.8 77.2% 49.8%;
+    --border: 217 32% 25%;
+    --input: 217 32% 25%;
+    --ring: 199 80% 70%;
 
-    --badge-primary: 350 77% 70%;
+    --badge-primary: 199 80% 70%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
   }
 }
