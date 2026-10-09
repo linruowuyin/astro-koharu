@@ -6,7 +6,7 @@ import { colophonItemsAt } from '@lib/content/colophon';
 import { getPostSlug } from '@lib/content/locale';
 import { getPostColophon } from '@lib/content/post-colophon';
 import { getPostReadingTime } from '@lib/content/posts';
-import { displayDate } from '@lib/date';
+import { displayDate, getPostAge } from '@lib/date';
 import { getLqipStyle } from '@lib/lqip';
 import { postTitleMorphName } from '@lib/morph-transitions';
 import { defaultHeroImage, defaultHeroSrcset } from '@lib/responsive-image';
@@ -31,8 +31,14 @@ const { data, title, compact = false } = Astro.props as CoverProps;
 
 const { date, updated, title: dataTitle, draft } = data?.data ?? {};
 
+// 构建时刻：静态站构建完就不会变，用它当"现在"比 new Date() 更贴近上线后的真实表现。
+const buildTime = new Date();
+
 const readState = data ? getPostReadingTime(data) : null;
 const isDraft = import.meta.env.DEV && draft === true;
+
+// 时效性标注：由已有 date 推导，不新增 frontmatter 字段，对存量文章零改动。
+const postAge = date ? getPostAge(date, buildTime) : null;
 
 // 获取横幅图片的 LQIP 样式
 const bannerLqipStyle = compact ? undefined : getLqipStyle('/img/site_header_1920.webp');
@@ -114,6 +120,22 @@ const copyFailedLabel = t(locale, 'common.copyFailed');
                 <span class="flex items-center gap-1">
                   <Icon name="fa6-solid:calendar-days" />
                   {t(locale, "post.updatedAt", { date: displayDate.datetime(updated) })}
+                </span>
+              )}
+              {/* 本地定制：财经内容时效性提示。金额/点位/板块轮动都会过期，
+                  超过一年的文章额外提一句，避免读者照搬旧结论。 */}
+              {postAge && (
+                <span
+                  class="flex items-center gap-1"
+                  title={t(locale, "post.ageStale")}
+                  class:list={[
+                    postAge.unit === 'year' && 'text-amber-500/90',
+                  ]}
+                >
+                  <Icon name="fa6-solid:hourglass-half" />
+                  {postAge.unit === 'year'
+                    ? t(locale, 'post.ageYear', { count: postAge.value })
+                    : t(locale, 'post.ageMonth', { count: postAge.value })}
                 </span>
               )}
               <span class="flex items-center gap-1">

@@ -119,6 +119,27 @@ export function parseDateInSiteTimezone(dateString: string): Date {
  * @param date - Date object incorrectly parsed as UTC by gray-matter
  * @returns Date object with correct UTC timestamp
  */
+/**
+ * 发布距今的粗粒度描述。
+ *
+ * 本站以财经内容为主，读者需要一眼看出"这是多久以前的判断"。金额、点位、
+ * 板块轮动都有时效，过期的结论照搬会误导人，所以文章头部给一个相对时间。
+ *
+ * 不需要任何 frontmatter 字段，全部由已有 `date` 推导，因此对存量文章
+ * 零改动。新文章不足 minDays 时返回 null，避免刚发布的文章挂个"0 天前"。
+ *
+ * @param date 文章发布时间
+ * @param now 当前时间，构建时传入便于测试
+ * @param minDays 少于该天数视为新鲜，不标注
+ * @returns null 表示还新鲜；否则给出按月/年取整的相对时间
+ */
+export function getPostAge(date: Date, now: Date = new Date(), minDays = 30): { unit: 'month' | 'year'; value: number } | null {
+  const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000);
+  if (!Number.isFinite(days) || days < minDays) return null;
+  if (days < 365) return { unit: 'month', value: Math.max(1, Math.round(days / 30)) };
+  return { unit: 'year', value: Math.max(1, Math.round(days / 365)) };
+}
+
 export function reinterpretUtcAsTimezone(date: Date): Date {
   // Extract the "wrong" UTC time as a string (e.g., "2025-12-29 21:55:00")
   const dateStr = formatInTimeZone(date, 'UTC', 'yyyy-MM-dd HH:mm:ss');

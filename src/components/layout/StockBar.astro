@@ -1,86 +1,111 @@
 ---
 // src/components/layout/StockBar.astro
 ---
-<div class="ticker-container" id="ticker-box"></div>
+<div class="stock-bar" id="stock-bar" data-state="loading" aria-label="行情条"></div>
 
 <script is:inline>
-  function loadTicker() {
-    const container = document.getElementById('ticker-box');
-    if (!container) return;
+  (function () {
+    // 按北京时间判断时段：09:00-16:00 显示 A 股 / 港股，其余显示美股。
+    // 纯本地计算，不依赖任何外部时间接口（早期版本请求淘宝接口，跨境
+    // ERR_CONNECTION_CLOSED 且挂起 10 秒以上，直接把行情条拖成空白）。
+    var bjHour = (new Date().getUTCHours() + 8) % 24;
+    var isDayTime = bjHour >= 9 && bjHour < 16;
 
-    // 按北京时间判断时段：09:00-16:00 显示 A 股，其余显示美股。
-    // 早期版本会请求淘宝接口校准北京时间，但该接口跨境链路不稳（实测
-    // ERR_CONNECTION_CLOSED，且会挂起 10 秒以上才失败），导致行情条长时间空白。
-    // 这里改为纯本地计算，不再依赖任何外部时间接口。
-    const now = new Date();
-    const bjHour = (now.getUTCHours() + 8) % 24;
-    const isDayTime = bjHour >= 9 && bjHour < 16;
-
-    // A 股配置 + 黄金
-    const cnSymbols = [
-      {"proName":"SSE:000001","title":"上证指数"},
-      {"proName":"SZSE:399001","title":"深证成指"},
-      {"proName":"SSE:000300","title":"沪深300"},
-      {"proName":"TVC:GOLD","title":"黄金现货"}
-    ];
-
-    // 美股配置 + 黄金
-    const usSymbols = [
-      {"proName":"FOREXCOM:SPXUSD","title":"标普500"},
-      {"proName":"FOREXCOM:NSXUSD","title":"纳指100"},
-      {"proName":"FOREXCOM:DJI","title":"道琼斯"},
-      {"proName":"TVC:GOLD","title":"黄金现货"}
-    ];
-
-    const config = {
-      "symbols": isDayTime ? cnSymbols : usSymbols,
-      // 品种 logo 来自 s3-symbol-logo.tradingview.com。该域名跨境经常连不上，
-      // 拉不到时浏览器会在行情条正中渲染一个破图图标。行情数值本身不依赖它，
-      // 所以直接关掉，用名称+涨跌幅代替。
-      "showSymbolLogo": false,
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "displayMode": "regular"
+    // 东方财富行情接口。返回 Access-Control-Allow-Origin，可直接 fetch。
+    // f1=小数位数 f2=最新价 f3=涨跌幅 f4=涨跌额 f12=代码 f14=名称
+    var GROUPS = {
+      cn: [
+        { id: '1.000001', name: '上证指数', url: 'https://quote.eastmoney.com/zs000001.html' },
+        { id: '0.399001', name: '深证成指', url: 'https://quote.eastmoney.com/zs399001.html' },
+        { id: '1.000300', name: '沪深300', url: 'https://quote.eastmoney.com/zs000300.html' },
+        { id: '0.399006', name: '创业板指', url: 'https://quote.eastmoney.com/zs399006.html' },
+        { id: '100.HSI', name: '恒生指数', url: 'https://quote.eastmoney.com/HKHSI.html' }
+      ],
+      us: [
+        { id: '100.DJIA', name: '道琼斯', url: 'https://quote.eastmoney.com/gb/zsDJIA.html' },
+        { id: '100.NDX', name: '纳斯达克', url: 'https://quote.eastmoney.com/gb/zsNDX.html' },
+        { id: '100.SPX', name: '标普500', url: 'https://quote.eastmoney.com/gb/zsSPX.html' },
+        { id: '100.HSI', name: '恒生指数', url: 'https://quote.eastmoney.com/HKHSI.html' },
+        { id: '1.000001', name: '上证指数', url: 'https://quote.eastmoney.com/zs000001.html' }
+      ]
     };
 
-    const iframe = document.createElement('iframe');
-    iframe.src = `https://www.tradingview-widget.com/embed-widget/ticker-tape/?locale=zh_CN#${encodeURIComponent(JSON.stringify(config))}`;
-    iframe.style.cssText = "width: 100%; height: 46px; border: none; overflow: hidden;";
-    iframe.setAttribute('frameborder', '0');
-    iframe.setAttribute('title', '行情条');
-    // TradingView 官方嵌入说明要求带上该属性，缺失时部分网络环境下 widget
-    // 会拒绝初始化，只留下一个空白 iframe。
-    iframe.setAttribute('referrerpolicy', 'no-referrer');
-    iframe.setAttribute('scrolling', 'no');
+    var list = isDayTime ? GROUPS.cn : GROUPS.us;
+    var REFRESH_MS = 60000;
 
-    // 兜底：widget 所在域名被拦截时不会抛 error，只会留下 TradingView 自己的
-    // 灰色占位块（#ddd）+ 破图图标，整条留着比不显示更像站点坏了。
-    //
-    // 判定依据只能是 iframe 的 load 事件——跨域拿不到内部渲染状态。注意不能
-    // 无条件超时删除：那会把正常加载成功的行情条也一起删掉（实测踩过，
-    // 表现为 12 秒后行情条凭空消失）。
-    let settled = false;
-    const settle = () => { settled = true; };
-    iframe.addEventListener('load', settle, { once: true });
-    iframe.addEventListener('error', settle, { once: true });
+    function fmt(value, digits) {
+      return value.toLocaleString('zh-CN', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      });
+    }
 
-    container.appendChild(iframe);
+    function itemHtml(item, row) {
+      var p = Math.pow(10, row.f1 || 0);
+      var price = row.f2 / p;
+      var changePct = row.f3 / 100;
+      var cls = changePct > 0 ? 'is-up' : changePct < 0 ? 'is-down' : 'is-flat';
+      var arrow = changePct > 0 ? '▲' : changePct < 0 ? '▼' : '—';
+      return (
+        '<a class="stock-bar__item" href="' + item.url + '" target="_blank" rel="noopener noreferrer">' +
+          '<span class="stock-bar__name">' + row.f14 + '</span>' +
+          '<span class="stock-bar__price">' + fmt(price, 2) + '</span>' +
+          '<span class="stock-bar__change ' + cls + '">' + arrow + ' ' + fmt(Math.abs(changePct), 2) + '%</span>' +
+        '</a>'
+      );
+    }
 
-    setTimeout(() => {
-      if (!settled && container.isConnected) container.remove();
-    }, 12000);
-  }
+    function paint(bar, rows) {
+      // 内容复制一份接在后面，marquee 滚到 -50% 时无缝衔接。
+      var html = rows.map(function (row, i) {
+        return itemHtml(list[i], row);
+      }).join('');
 
-  // 等布局就绪再挂 iframe：widget 启动时会测量容器尺寸，解析阶段插入容易拿到 0 高度。
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadTicker, { once: true });
-  } else {
-    loadTicker();
-  }
+      bar.innerHTML = '<div class="stock-bar__track">' + html + html + '</div>';
+      bar.dataset.state = 'ready';
+    }
+
+    function load(bar) {
+      var url =
+        'https://push2.eastmoney.com/api/qt/ulist.np/get' +
+        '?fields=f1,f2,f3,f4,f12,f14' +
+        '&secids=' + list.map(function (s) { return s.id; }).join(',');
+
+      fetch(url, { cache: 'no-store' })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          var rows = json && json.data && json.data.diff;
+          if (!rows || !rows.length) throw new Error('empty payload');
+          paint(bar, rows);
+          clearInterval(bar._timer);
+          bar._timer = setInterval(function () {
+            if (bar.isConnected) load(bar);
+          }, REFRESH_MS);
+        })
+        .catch(function () {
+          // 接口不可达时直接隐藏整条：留一个灰块加破图图标更像是站点坏了。
+          if (bar.isConnected) bar.remove();
+        });
+    }
+
+    function init() {
+      var bar = document.getElementById('stock-bar');
+      if (!bar) return;
+      // 客户端路由切换会重建 Header 里的这个节点，脚本本身不会重跑，
+      // 所以每次 astro:page-load 都要补一次；已就绪的节点直接跳过。
+      if (bar.dataset.state === 'ready' || bar._loading) return;
+      bar._loading = true;
+      load(bar);
+    }
+
+    init();
+    document.addEventListener('astro:page-load', init);
+  })();
 </script>
 
 <style>
-  .ticker-container {
+  .stock-bar {
+    display: block;
     width: 100%;
     height: 46px;
     background: rgba(0, 0, 0, 0.4);
@@ -89,7 +114,76 @@
     margin: 0;
     padding: 0;
     z-index: 50;
-    display: flex;
-    justify-content: center;
+  }
+
+  .stock-bar__track {
+    display: inline-flex;
+    align-items: center;
+    gap: 28px;
+    height: 46px;
+    padding-left: 14px;
+    white-space: nowrap;
+    will-change: transform;
+    animation: stock-bar-scroll 45s linear infinite;
+  }
+
+  .stock-bar__track:hover {
+    animation-play-state: paused;
+  }
+
+  .stock-bar__item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+    font-size: 13px;
+    line-height: 1;
+    color: rgb(255 255 255 / 0.92);
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .stock-bar__item:hover {
+    opacity: 0.7;
+  }
+
+  .stock-bar__name {
+    font-weight: 600;
+  }
+
+  .stock-bar__price {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stock-bar__change {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  /* A 股习惯：红涨绿跌 */
+  .stock-bar__change.is-up {
+    color: #f87171;
+  }
+
+  .stock-bar__change.is-down {
+    color: #4ade80;
+  }
+
+  .stock-bar__change.is-flat {
+    color: rgb(255 255 255 / 0.7);
+  }
+
+  @keyframes stock-bar-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stock-bar__track {
+      animation: none;
+    }
   }
 </style>

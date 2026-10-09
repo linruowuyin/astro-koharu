@@ -68,6 +68,10 @@ export const uiStrings = {
   'post.wordCount': '{count} 字',
   'post.publishedAt': '发布于 {date}',
   'post.updatedAt': '更新于 {date}',
+  // 本地定制：财经内容的时效性标注，由 src/lib/date.ts 的 getPostAge 推导
+  'post.ageMonth': '{count} 个月前',
+  'post.ageYear': '{count} 年前',
+  'post.ageStale': '内容可能已过时',
   'post.prevPost': '上一篇',
   'post.nextPost': '下一篇',
   'post.relatedPosts': '相关文章',
