@@ -66,31 +66,56 @@
     }
 
     function load(bar) {
-      var url =
-        'https://push2.eastmoney.com/api/qt/ulist.np/get' +
-        '?fields=f1,f2,f3,f4,f12,f14' +
-        '&secids=' + list.map(function (s) { return s.id; }).join(',');
+      // 用 JSONP 而不是 fetch：Cloudflare 会往页面注入 rocket-loader，它会包装
+      // fetch，实测在生产环境下这里直接抛 "TypeError: Failed to fetch"，
+      // 而同一个接口用 curl 请求完全正常、ACAO 也正确放行。加 <script> 标签不受
+      // 这层包装影响，也不依赖 CORS 预检。
+      var cb = '__stockBar' + Date.now();
+      var script = document.createElement('script');
 
-      fetch(url, { cache: 'no-store' })
-        .then(function (res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
-        .then(function (json) {
+      var cleanup = function () {
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+      };
+
+      // 8 秒没有任何回调即视为不可达，移除整条：留灰块加破图更像站点坏了。
+      var timer = setTimeout(function () {
+        cleanup();
+        console.warn('[stock-bar] 行情接口超时未回调');
+        if (bar.isConnected) bar.remove();
+      }, 8000);
+
+      window[cb] = function (json) {
+        clearTimeout(timer);
+        cleanup();
+        try {
           var rows = json && json.data && json.data.diff;
           if (!rows || !rows.length) throw new Error('empty payload');
           paint(bar, rows);
-          clearInterval(bar._timer);
           bar._timer = setInterval(function () {
             if (bar.isConnected) load(bar);
           }, REFRESH_MS);
-        })
-        .catch(function (err) {
-          // 接口不可达时直接隐藏整条：留一个灰块加破图图标更像是站点坏了。
-          // 这里必须留日志，否则失败会完全静默，线上出问题无从排查。
-          console.warn('[stock-bar] 行情接口不可用:', err);
+        } catch (err) {
+          console.warn('[stock-bar] 行情数据异常:', err);
           if (bar.isConnected) bar.remove();
-        });
+        }
+      };
+
+      script.onerror = function () {
+        clearTimeout(timer);
+        cleanup();
+        console.warn('[stock-bar] 行情脚本加载失败');
+        if (bar.isConnected) bar.remove();
+      };
+
+      var url =
+        'https://push2.eastmoney.com/api/qt/ulist.np/get' +
+        '?cb=' + cb +
+        '&fields=f1,f2,f3,f4,f12,f14' +
+        '&secids=' + list.map(function (s) { return s.id; }).join(',');
+
+      script.src = url;
+      document.head.appendChild(script);
     }
 
     function init() {
