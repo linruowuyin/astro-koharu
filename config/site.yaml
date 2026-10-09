@@ -835,6 +835,6 @@ bgm:
   enabled: false
 
 # --- 追番 (Bangumi) ---
-# 填自己的 bilibili 用户 ID 才生效；留空即不显示
-bangumi:
-  userId: ''
+# 已移除：src/constants/site-config.ts 的判定是 `yamlConfig.bangumi ?? null`，
+# 只要 site.yaml 里存在 bangumi 段（哪怕 userId 为空）就会往顶栏注入「追番」入口。
+# 整段删除即可关闭导航入口。
