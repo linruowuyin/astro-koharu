@@ -1,71 +1,87 @@
 ---
 // src/components/layout/StockBar.astro
 ---
-<div class="ticker-container" id="ticker-box">
-    <div style="height: 46px;"></div>
-  </div>
-  
-  <script is:inline>
-    function loadTicker() {
-      const container = document.getElementById('ticker-box');
-      if (!container) return;
+<div class="ticker-container" id="ticker-box"></div>
 
-      // 按北京时间判断时段：09:00-16:00 显示 A 股，其余显示美股。
-      // 早期版本会请求淘宝接口校准北京时间，但该接口跨境链路不稳（实测
-      // ERR_CONNECTION_CLOSED，且会挂起 10 秒以上才失败），导致行情条长时间空白。
-      // 这里改为纯本地计算，不再依赖任何外部时间接口。
-      const now = new Date();
-      const bjHour = (now.getUTCHours() + 8) % 24;
-      const isDayTime = bjHour >= 9 && bjHour < 16;
-      
-      // A 股配置 + 黄金
-      const cnSymbols = [
-        {"proName":"SSE:000001","title":"上证指数"},
-        {"proName":"SZSE:399001","title":"深证成指"},
-        {"proName":"SSE:000300","title":"沪深300"},
-        {"proName":"TVC:GOLD","title":"黄金现货"}
-      ];
-      
-      // 美股配置 + 黄金
-      const usSymbols = [
-        {"proName":"FOREXCOM:SPXUSD","title":"标普500"},
-        {"proName":"FOREXCOM:NSXUSD","title":"纳指100"},
-        {"proName":"FOREXCOM:DJI","title":"道琼斯"},
-        {"proName":"TVC:GOLD","title":"黄金现货"}
-      ];
-  
-      const config = {
-        "symbols": isDayTime ? cnSymbols : usSymbols,
-        "showSymbolLogo": true,
-        "colorTheme": "dark",
-        "isTransparent": true,
-        "displayMode": "regular"
-      };
-  
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.tradingview-widget.com/embed-widget/ticker-tape/?locale=zh_CN#${encodeURIComponent(JSON.stringify(config))}`;
-      iframe.style.cssText = "width: 100%; height: 46px; border: none; overflow: hidden;";
-      iframe.setAttribute('frameborder', '0');
-      iframe.setAttribute('title', '行情条');
-      
-      container.innerHTML = ''; 
-      container.appendChild(iframe);
-    }
-  
+<script is:inline>
+  function loadTicker() {
+    const container = document.getElementById('ticker-box');
+    if (!container) return;
+
+    // 按北京时间判断时段：09:00-16:00 显示 A 股，其余显示美股。
+    // 早期版本会请求淘宝接口校准北京时间，但该接口跨境链路不稳（实测
+    // ERR_CONNECTION_CLOSED，且会挂起 10 秒以上才失败），导致行情条长时间空白。
+    // 这里改为纯本地计算，不再依赖任何外部时间接口。
+    const now = new Date();
+    const bjHour = (now.getUTCHours() + 8) % 24;
+    const isDayTime = bjHour >= 9 && bjHour < 16;
+
+    // A 股配置 + 黄金
+    const cnSymbols = [
+      {"proName":"SSE:000001","title":"上证指数"},
+      {"proName":"SZSE:399001","title":"深证成指"},
+      {"proName":"SSE:000300","title":"沪深300"},
+      {"proName":"TVC:GOLD","title":"黄金现货"}
+    ];
+
+    // 美股配置 + 黄金
+    const usSymbols = [
+      {"proName":"FOREXCOM:SPXUSD","title":"标普500"},
+      {"proName":"FOREXCOM:NSXUSD","title":"纳指100"},
+      {"proName":"FOREXCOM:DJI","title":"道琼斯"},
+      {"proName":"TVC:GOLD","title":"黄金现货"}
+    ];
+
+    const config = {
+      "symbols": isDayTime ? cnSymbols : usSymbols,
+      // 品种 logo 来自 s3-symbol-logo.tradingview.com。该域名跨境经常连不上，
+      // 拉不到时浏览器会在行情条正中渲染一个破图图标。行情数值本身不依赖它，
+      // 所以直接关掉，用名称+涨跌幅代替 logo。
+      "showSymbolLogo": false,
+      "colorTheme": "dark",
+      "isTransparent": true,
+      "displayMode": "regular"
+    };
+
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.tradingview-widget.com/embed-widget/ticker-tape/?locale=zh_CN#${encodeURIComponent(JSON.stringify(config))}`;
+    iframe.style.cssText = "width: 100%; height: 46px; border: none; overflow: hidden;";
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('title', '行情条');
+    // TradingView 官方嵌入说明要求带上该属性，缺失时部分网络环境下 widget
+    // 会拒绝初始化，只留下一个空白 iframe。
+    iframe.setAttribute('referrerpolicy', 'no-referrer');
+    iframe.setAttribute('scrolling', 'no');
+
+    container.appendChild(iframe);
+
+    // 兜底：widget 被拦截时不会抛 error，只会留下 TradingView 自己的灰色占位块
+    // （#ddd）+ 破图图标。整条留着比不显示更像站点坏了，所以超时后直接移除。
+    // iframe 跨域，拿不到内部渲染状态，只能用超时判断，因此给得比较宽。
+    setTimeout(() => {
+      if (container.isConnected) container.remove();
+    }, 12000);
+  }
+
+  // 等布局就绪再挂 iframe：widget 启动时会测量容器尺寸，解析阶段插入容易拿到 0 高度。
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadTicker, { once: true });
+  } else {
     loadTicker();
-  </script>
-  
-  <style>
-    .ticker-container {
-      width: 100%;
-      height: 46px;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
-      overflow: hidden;
-      margin: 0;
-      padding: 0;
-      z-index: 50;
-      display: flex;
-      justify-content: center;
-    }
-  </style>
+  }
+</script>
+
+<style>
+  .ticker-container {
+    width: 100%;
+    height: 46px;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+  }
+</style>
