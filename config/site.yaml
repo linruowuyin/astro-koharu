@@ -591,14 +591,19 @@ comment:
     search: false                    # 搜索功能 (默认: false)
     reaction: false                  # 文章反应功能 (默认: false)
                                      # 可选: true | false | 字符串数组 (自定义反应图标)
-    emoji: true                      # 表情包配置 (默认: ['//unpkg.com/@waline/emojis@1.2.0/weibo'])
-                                     # 可选: true | false | 字符串/对象数组
-                                     # 预设表情包: '//unpkg.com/@waline/emojis@1.2.0/weibo'
-                                     #           '//unpkg.com/@waline/emojis@1.2.0/alus'
-                                     #           '//unpkg.com/@waline/emojis@1.2.0/bilibili'
-                                     #           '//unpkg.com/@waline/emojis@1.2.0/qq'
-                                     #           '//unpkg.com/@waline/emojis@1.2.0/tieba'
-                                     #           '//unpkg.com/@waline/emojis@1.2.0/tw-emoji'
+    emoji:                           # 表情包配置；写 true 等价于只启用默认微博包
+                                     # 本地定制：改用 jsdmirror 国内镜像。默认的 unpkg
+                                     # 跨境常连不上，表情面板会整个空掉。
+                                     # 该包可用目录：weibo / qq / alus / bilibili / tieba /
+                                     #               coolapk / coolapk_coin / bmoji /
+                                     #               tw-emoji / soul-emoji / hoyoverse-hi3
+      - 'https://cdn.jsdmirror.com/npm/@waline/emojis@1.4.0/weibo'
+      - 'https://cdn.jsdmirror.com/npm/@waline/emojis@1.4.0/qq'
+      - 'https://cdn.jsdmirror.com/npm/@waline/emojis@1.4.0/alus'
+      - 'https://cdn.jsdmirror.com/npm/@waline/emojis@1.4.0/bilibili'
+      - 'https://cdn.jsdmirror.com/npm/@waline/emojis@1.4.0/tieba'
+      - 'https://cdn.jsdmirror.com/npm/@waline/emojis@1.4.0/coolapk'
+      - 'https://cdn.jsdmirror.com/npm/@waline/emojis@1.4.0/bmoji'
     commentSorting: latest           # 评论排序 ('latest' | 'oldest' | 'hottest', 默认: 'latest')
     noCopyright: false               # 隐藏页脚版权信息 (默认: false)
     comment: true                    # 评论数统计 (默认: true)
