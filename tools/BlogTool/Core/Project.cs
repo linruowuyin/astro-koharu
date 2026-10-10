@@ -67,7 +67,9 @@ public static class Project
 
     private static bool SetRoot(string root)
     {
-        Root = root;
+        // 向上找是从 AppContext.BaseDirectory 开始的，它自带结尾反斜杠。
+        // 不削掉的话后面拼路径、给 git 当工作目录都带着个多余的斜杠。
+        Root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
         Remember();
         return true;
     }

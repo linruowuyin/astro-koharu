@@ -41,6 +41,8 @@ tools/BlogTool/test/bin/
 tools/BlogTool/test/obj/
 tools/BlogTool/test/shots/
 tools/BlogTool/test/*.txt
+# 编译好的工具本体放在项目根目录，直接双击就能用
+/博客工具.exe
 
 # Transformers.js model cache
 .cache/*
