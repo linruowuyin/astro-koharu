@@ -103,6 +103,9 @@ internal static class Program
             "commit" => new CommitDialog(BuildSampleFiles(), "feat: 更新行情条并新增一篇测试文章 (10-10 15:20)"),
             "settings" => new SettingsDialog(),
             "settings-open" => ExpandedSettings(),
+            // 加载中那一帧：LoadAsync 还没回来就截。不给这个模式，
+            // 每次截图都等凭据读完，「刚弹出时长什么样」根本看不到。
+            "settings-loading" => new SettingsDialog(),
             "icons" => BuildIconSheet(),
             _ => null,
         };
@@ -122,7 +125,9 @@ internal static class Program
         control.Shown += (_, _) =>
         {
             // 弹窗是异步填内容的（回滚列表要读 git），等它自己画完。
-            for (var i = 0; i < 40; i++)
+            // settings-loading 是反例：要的就是「还没读完」的那一帧。
+            var settle = which == "settings-loading" ? 0 : 40;
+            for (var i = 0; i < settle; i++)
             {
                 Thread.Sleep(100);
                 Application.DoEvents();

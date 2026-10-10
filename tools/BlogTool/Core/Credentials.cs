@@ -31,32 +31,52 @@ public static class Credentials
 {
     public const string DefaultHost = "github.com";
 
+    /// <summary>credential fill 那一条的结果。单独抽出来是为了能被并发地跑。</summary>
+    private sealed record FillResult(bool Exists, string Username, int PasswordLength, string Note);
+
     /// <summary>读出当前状态。只有元信息，不含 token 明文。</summary>
     public static async Task<CredentialInfo> ReadAsync(string host = DefaultHost)
     {
-        var helper = await ConfigAsync("credential.helper") ?? "(未配置)";
-        var origin = await RemoteUrlAsync("origin");
+        // 三条命令互不依赖，串着跑就是三份进程启动开销一份接一份地等。
+        // 这段延迟全程挡在用户眼前——设置窗口是同步弹出来的，先摆好界面
+        // 再等它们回来，所以并发的收益全落在体感上。
+        var helperTask = ConfigAsync("credential.helper");
+        var originTask = RemoteUrlAsync("origin");
+        var fillTask = FillAsync(host);
 
+        await Task.WhenAll(helperTask, originTask, fillTask);
+
+        var fill = fillTask.Result;
+        return new CredentialInfo
+        {
+            Exists = fill.Exists,
+            Username = fill.Username,
+            PasswordLength = fill.PasswordLength,
+            Helper = await helperTask ?? "(未配置)",
+            OriginUrl = await originTask,
+            Note = fill.Note,
+        };
+    }
+
+    private static async Task<FillResult> FillAsync(string host)
+    {
         try
         {
             var (code, stdout, _) = await Git.RunWithInputAsync(
                 "credential fill", $"protocol=https\nhost={host}\n\n");
 
-            if (code != 0) return new CredentialInfo { Helper = helper, OriginUrl = origin };
+            if (code != 0) return new FillResult(false, "", 0, "");
 
             var parsed = ParseCredentialOutput(stdout);
-            return new CredentialInfo
-            {
-                Exists = parsed.Password.Length > 0,
-                Username = parsed.Username,
-                PasswordLength = parsed.Password.Length,
-                Helper = helper,
-                OriginUrl = origin,
-            };
+            return new FillResult(
+                parsed.Password.Length > 0,
+                parsed.Username,
+                parsed.Password.Length,
+                "");
         }
         catch (Exception ex)
         {
-            return new CredentialInfo { Helper = helper, OriginUrl = origin, Note = ex.Message };
+            return new FillResult(false, "", 0, ex.Message);
         }
     }
 

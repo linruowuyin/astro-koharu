@@ -61,6 +61,13 @@ internal sealed class SettingsDialog : Form
     private CancellationTokenSource? _loginCts;
     private bool _loggingIn;
     private bool _manualOpen;
+    private bool _loaded;
+
+    // 各按钮该不该出现。这里存一份自己的真值，而不是回头去读 Visible。
+    private bool _showSave;
+    private bool _showTest;
+    private bool _showClear;
+
     private CredentialInfo _info = new();
 
     public SettingsDialog()
@@ -95,6 +102,14 @@ internal sealed class SettingsDialog : Form
             _tokenLabel, _token, _reveal, _helpLink, _openPageLink, _hint,
             _login, _save, _test, _clear, _close]);
         CancelButton = _close;
+
+        // 构造函数末尾同步摆一次初始布局。
+        //
+        // Load 是 async 的，得连着跑几条 git 命令才回来，可窗口在这之前
+        // 就已经显示了。不先摆一次，用户看到的不是「正在检查」，而是控件
+        // 还停在创建时那套坐标上的半成品：按钮堆在左上角、卡片一片空白、
+        // 手动表单整个露在外面。截图里那个怪样子就是这么来的。
+        ApplyMode();
 
         Load += async (_, _) => await LoadAsync();
     }
@@ -149,9 +164,23 @@ internal sealed class SettingsDialog : Form
         _card.Controls.AddRange([_cardIcon, _cardTitle, _cardNote, _cardFoot]);
     }
 
-    private void PaintCard(bool hasCredential)
+    private void PaintCard()
     {
-        if (hasCredential)
+        if (!_loaded)
+        {
+            _card.BackColor = Color.FromArgb(248, 249, 251);
+            SetIcon(null);
+            _cardTitle.Text = "正在检查本机凭据…";
+            _cardTitle.ForeColor = Ui.Dim;
+            foreach (var k in _cardKeys) k.Visible = false;
+            foreach (var v in _cardVals) v.Visible = false;
+            _cardFoot.Visible = false;
+            _cardNote.Visible = true;
+            _cardNote.Text = "要读 git 的凭据助手和远端地址，等一下就好。";
+            return;
+        }
+
+        if (_info.Exists)
         {
             _card.BackColor = Color.FromArgb(244, 250, 247);
             SetIcon(Icons.Check(28, Color.FromArgb(22, 150, 90)));
@@ -198,7 +227,7 @@ internal sealed class SettingsDialog : Form
     }
 
     /// <summary>换图标时把上一张释放掉，否则每次刷新状态都漏一张位图。</summary>
-    private void SetIcon(Bitmap image)
+    private void SetIcon(Bitmap? image)
     {
         var old = _cardIcon.Image;
         _cardIcon.Image = image;
@@ -301,21 +330,27 @@ internal sealed class SettingsDialog : Form
     private void ApplyMode()
     {
         var has = _info.Exists;
-        PaintCard(has);
+        PaintCard();
 
-        // 表单只在「没凭据」或「用户主动展开」时出现
-        var showForm = _manualOpen || !has;
+        // 没读完之前一律按收起处理。读回来的结果九成是「已配置」，
+        // 先展开再收回去，窗口会当着用户的面抖一下，比慢更难看。
+        var showForm = _loaded && (_manualOpen || !has);
         _userLabel.Visible = _tokenLabel.Visible = showForm;
         _user.Visible = _token.Visible = _reveal.Visible = showForm;
         _helpLink.Visible = _openPageLink.Visible = showForm;
 
         _login.Text = has ? "重新登录" : "浏览器登录";
+        _login.Enabled = _loaded;          // 没读清楚之前不让点，免得连着触发两条 git
+        _showSave = showForm;
+        _showTest = has;
+        _showClear = has;
         _save.Visible = showForm;
         _test.Visible = has;
         _clear.Visible = has;
 
         LayoutFor(showForm);
 
+        if (!_loaded) { Say("正在检查本机凭据…", Bad: false); return; }
         if (!has) Say("点「浏览器登录」最省事：浏览器打开 GitHub，你点一下确认就行。", Bad: false);
         else if (_manualOpen) Say("手动填入新令牌会覆盖当前那份，保存后立即生效。", Bad: false);
         else Say("平时不用管这里，推送会自动使用上面那份凭据。", Bad: false);
@@ -326,6 +361,11 @@ internal sealed class SettingsDialog : Form
     ///
     /// 收起时对话框变矮，展开时变高，省掉中间那一大片空白；
     /// 按钮按可见顺序排，「关闭」固定贴右边，所以按钮数量怎么变都不会重叠。
+    ///
+    /// 「该显示哪个」一律读 _showSave/_showTest/_showClear 这些字段，
+    /// 不读控件的 Visible：窗口尚未显示时 Visible 的 getter 会因为父窗
+    /// 不可见而返回 false，构造阶段拿它排位会一个都排不上，
+    /// 按钮就全留在创建时的 (0,0) 堆在左上角。
     /// </summary>
     private void LayoutFor(bool showForm)
     {
@@ -339,11 +379,14 @@ internal sealed class SettingsDialog : Form
 
         var y = ClientSize.Height - bottomPad - buttonH;
         var x = PadX;
-        foreach (var b in new[] { _login, _save, _test, _clear })
+        foreach (var (button, show) in new[]
         {
-            if (!b.Visible) continue;
-            b.Location = new Point(x, y);
-            x += b.Width + Gap;
+            (_login, true), (_save, _showSave), (_test, _showTest), (_clear, _showClear),
+        })
+        {
+            if (!show) continue;
+            button.Location = new Point(x, y);
+            x += button.Width + Gap;
         }
         _close.Location = new Point(PadX + ContentW - _close.Width, y);
     }
@@ -353,6 +396,7 @@ internal sealed class SettingsDialog : Form
     private async Task LoadAsync()
     {
         _info = await Credentials.ReadAsync();
+        _loaded = true;
         PrefillUser();
         ApplyMode();
     }
