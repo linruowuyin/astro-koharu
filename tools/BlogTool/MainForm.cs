@@ -107,6 +107,8 @@ internal static class Program
             // 每次截图都等凭据读完，「刚弹出时长什么样」根本看不到。
             "settings-loading" => new SettingsDialog(),
             "icons" => BuildIconSheet(),
+            "posts" => new PostsDialog(),
+            "dev" => new DevDialog(),
             _ => null,
         };
 
@@ -263,6 +265,19 @@ internal static class SelfTest
                 lines.Add($"  {t}");
                 lines.Add($"    → {PostCreator.SlugifyAsync(t).GetAwaiter().GetResult()}");
             }
+
+            lines.Add("");
+            lines.Add("文章库：");
+            var posts = Posts.ReadAll();
+            lines.Add($"  共 {posts.Count} 篇，加密 {posts.Count(p => p.Encrypted)} 篇");
+            // 抽查最靠前的三篇：slug 是拼线上链接的唯一依据，
+            // 解析时被截断的话链接会 404，而列表里看不出来。
+            foreach (var p in posts.Take(3))
+            {
+                lines.Add($"  {p.Date:yyyy-MM-dd}  {p.Title}");
+                lines.Add($"    link: {p.Slug}");
+                lines.Add($"    线上: {p.OnlineUrlFor("https://nephren.de5.net")}");
+            }
         }
         catch (Exception ex)
         {
@@ -319,12 +334,20 @@ internal sealed class MainForm : Form
     private readonly Button _clearLog = new();
     private bool _busy;
 
+    // 纵向布局。状态栏与日志区的 y 在构造函数和 Resize 里各要用一次，
+    // 写成两处字面量就迟早只改一处——加一行卡片时日志区盖住卡片就是这么来的。
+    private const int Row1Y = 118;          // 四个动作卡片
+    private const int Row2Y = 230;          // 文章库 / 本地预览
+    private const int CardH = 102;
+    private const int StatusY = 342;
+    private const int LogY = 376;
+
     public MainForm()
     {
         Text = "博客工具";
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(972, 600);
-        MinimumSize = new Size(900, 620);
+        ClientSize = new Size(972, 720);
+        MinimumSize = new Size(900, 740);
         BackColor = Bg;
         ForeColor = Fg;
         Font = new Font("Microsoft YaHei UI", 9F);
@@ -340,9 +363,21 @@ internal sealed class MainForm : Form
         // 窗口可以拖边框改大小，日志区跟着撑满剩余空间。
         Resize += (_, _) =>
         {
-            _logHost.Bounds = new Rectangle(20, 258, ClientSize.Width - 40, ClientSize.Height - 278);
-            _status.Bounds = new Rectangle(22, 228, ClientSize.Width - 44, 24);
+            _logHost.Bounds = new Rectangle(20, LogY, ClientSize.Width - 40, ClientSize.Height - LogY - 20);
+            _status.Bounds = new Rectangle(22, StatusY, ClientSize.Width - 44, 24);
         };
+    }
+
+    private void OpenPosts()
+    {
+        using var d = new PostsDialog();
+        d.ShowDialog(this);
+    }
+
+    private void OpenDev()
+    {
+        using var d = new DevDialog();
+        d.ShowDialog(this);
     }
 
     private void BuildUi()
@@ -419,7 +454,7 @@ internal sealed class MainForm : Form
         {
             var s = specs[i];
             var card = new ActionCard(s.Title, s.Desc, s.Key, s.Icon(), s.Accent, () => _ = s.Run());
-            card.Bounds = new Rectangle(22 + i * 234, 118, 222, 102);
+            card.Bounds = new Rectangle(22 + i * 234, Row1Y, 222, CardH);
             cards[i] = card;
         }
 
@@ -428,11 +463,30 @@ internal sealed class MainForm : Form
         _publish = cards[2];
         _rollback = cards[3];
 
+        // ---- 浏览类卡片（不改动仓库的那两个）----
+        // 单独一行而不是塞进上面四个：上面四个是「会改仓库的动作」，
+        // 这两个是「看」。混在一排里容易让人以为点一下就会提交什么。
+        var browseSpecs = new (string Title, string Desc, string Key, Func<Bitmap> Icon, Color Accent, Action Run)[]
+        {
+            ("文章库", "搜索浏览全部文章", "5", () => Icons.Posts(24, scale), Icons.PostsColor,
+                () => { using var d = new PostsDialog(); d.ShowDialog(this); }),
+            ("本地预览", "起 dev 看效果",   "6", () => Icons.Preview(24, scale), Icons.PreviewColor,
+                () => { using var d = new DevDialog(); d.ShowDialog(this); }),
+        };
+
+        for (var i = 0; i < browseSpecs.Length; i++)
+        {
+            var s = browseSpecs[i];
+            var card = new ActionCard(s.Title, s.Desc, s.Key, s.Icon(), s.Accent, s.Run);
+            card.Bounds = new Rectangle(22 + i * 234, Row2Y, 222, CardH);
+            Controls.Add(card);
+        }
+
         // ---- 状态栏 ----
         _status.Text = "就绪";
         _status.ForeColor = Dim;
         _status.AutoSize = false;
-        _status.Bounds = new Rectangle(22, 228, ClientSize.Width - 44, 24);
+        _status.Bounds = new Rectangle(22, StatusY, ClientSize.Width - 44, 24);
         _status.TextAlign = ContentAlignment.MiddleLeft;
 
         // ---- 日志区 ----
@@ -478,7 +532,7 @@ internal sealed class MainForm : Form
             _log.Height = Math.Max(80, _logPanel.ClientSize.Height - 46);
         };
 
-        _logHost.Bounds = new Rectangle(20, 258, ClientSize.Width - 40, ClientSize.Height - 278);
+        _logHost.Bounds = new Rectangle(20, LogY, ClientSize.Width - 40, ClientSize.Height - LogY - 20);
         _logHost.Controls.Add(_logPanel);
 
         // 日志区必须最后加：WinForms 里后加的控件 z-order 靠后，
@@ -495,7 +549,7 @@ internal sealed class MainForm : Form
         _logHost.SendToBack();
     }
 
-    /// <summary>数字键 1-4 直达四个功能，省得用鼠标找。</summary>
+    /// <summary>数字键 1-6 直达六个功能，省得用鼠标找。</summary>
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
         switch (keyData)
@@ -504,6 +558,8 @@ internal sealed class MainForm : Form
             case Keys.D2: _ = RunLqipAsync(); return true;
             case Keys.D3: _ = RunPublishAsync(); return true;
             case Keys.D4: _ = RunRollbackAsync(); return true;
+            case Keys.D5: OpenPosts(); return true;
+            case Keys.D6: OpenDev(); return true;
         }
         return base.ProcessCmdKey(ref msg, keyData);
     }

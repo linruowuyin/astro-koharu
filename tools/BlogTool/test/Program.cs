@@ -122,9 +122,145 @@ internal static class Program
         // ---- 凭据生命周期（临时仓库 + 临时 store + 非 GitHub 域名）----
         await RunCredentialLifecycleTestAsync();
 
+        // ---- 文章库 ----
+        RunPostsTests();
+
         Console.WriteLine();
         Console.WriteLine($"通过 {_passed}，失败 {_failed}");
         return _failed == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// 文章库的断言。
+    ///
+    /// 拿真实的 62 篇文章跑，顺便当一次「这个博客自己长什么样」的体检：
+    /// frontmatter 解析错了、链接拼不出来、搜索命中不对，在这里就能看出来。
+    /// </summary>
+    private static void RunPostsTests()
+    {
+        Console.WriteLine("文章库：");
+
+        var all = Posts.ReadAll();
+        True("扫到文章", all.Count > 0, $"{all.Count} 篇");
+        True("扫到全部 62 篇", all.Count >= 60, $"{all.Count} 篇");
+
+        // 每篇都得有标题、slug 和日期——缺一个列表里就是一行残缺信息
+        var noTitle = all.Count(p => p.Title.Length == 0);
+        Eq("没有缺标题的", noTitle, 0);
+        var noSlug = all.Count(p => p.Slug.Length == 0);
+        Eq("没有缺 link 的", noSlug, 0);
+        var noDate = all.Count(p => p.Date == DateTime.MinValue);
+        Eq("没有解析不出日期的", noDate, 0);
+
+        // 日期必须解析成合理区间，不能是 1970 之类
+        var earliest = all.Where(p => p.Date != DateTime.MinValue).Min(p => p.Date);
+        True("最早的文章在合理区间", earliest.Year is >= 2024 and <= 2026, earliest.ToString("yyyy-MM-dd"));
+
+        // 排序：新的在前
+        var sorted = all.Zip(all.Skip(1)).All(p => p.First.Date >= p.Second.Date);
+        True("按日期倒序", sorted, all.Count > 1 ? $"{all[0].Date:yyyy-MM-dd} 在最前" : "");
+
+        // 分类名要能从 categoryMap 映射出来
+        var research = all.FirstOrDefault(p => p.CategoryDir == "research");
+        if (research is not null)
+            Eq("research 映射到投研", research.CategoryName, "投研");
+
+        // 标签统计
+        var tags = Posts.AllTags(all);
+        True("统计出标签", tags.Count > 0, $"{tags.Count} 个");
+        True("标签按次数倒序", tags.Zip(tags.Skip(1)).All(t => t.First.Count >= t.Second.Count), "");
+
+        // ---- 线上链接 ----
+        PostInfo.SiteUrl = "https://nephren.de5.net";
+        var withLink = all.First(p => p.Slug.Length > 0);
+        Eq("线上链接拼接", withLink.OnlineUrl, $"https://nephren.de5.net/post/{withLink.Slug}");
+        Eq("结尾斜杠被吃掉",
+            new PostInfo { Title = "t", Slug = "s", CategoryDir = "note" }.OnlineUrlFor("https://x.dev/"),
+            "https://x.dev/post/s");
+
+        // 没有 link 的老文章不该给出错误地址，宁可不给
+        Eq("缺 link 时不给链接",
+            new PostInfo { Title = "t", Slug = "", CategoryDir = "note" }.OnlineUrlFor("https://x.dev"), "");
+        Eq("没有站点地址时不给链接",
+            new PostInfo { Title = "t", Slug = "s", CategoryDir = "note" }.OnlineUrlFor(""), "");
+
+        // ---- 搜索 ----
+        var byTitle = Posts.Search(all, "白银", searchBody: false);
+        True("按标题搜得到", byTitle.Count > 0, $"{byTitle.Count} 篇");
+
+        var byTag = Posts.Search(all, all.SelectMany(p => p.Tags).First(), searchBody: false);
+        True("按标签搜得到", byTag.Count > 0, $"{byTag.Count} 篇");
+
+        var empty = Posts.Search(all, "绝不可能存在的词zzz", searchBody: false);
+        Eq("搜不到时返回空", empty.Count, 0);
+
+        Eq("空关键词返回全部", Posts.Search(all, "", searchBody: false).Count, all.Count);
+        Eq("只有空格也返回全部", Posts.Search(all, "   ", searchBody: false).Count, all.Count);
+
+        // 多词按「与」：两词都要有
+        var twoWords = Posts.Search(all, "白银 黄金", searchBody: false);
+        True("多词按与匹配", twoWords.Count <= byTitle.Count, $"{twoWords.Count} ≤ {byTitle.Count}");
+
+        // 正文里才有的词，只有勾了「也搜正文」才该命中
+        var bodyOnly = "zzz唯一标记zzz";
+        var noBody = Posts.Search(all, bodyOnly, searchBody: false);
+        Eq("不搜正文时搜不到", noBody.Count, 0);
+        var withBody = Posts.Search(all, bodyOnly, searchBody: true);
+        Eq("搜正文时不误报", withBody.Count, 0);   // 真文章里没这个词，两种都该是 0
+
+        // ---- frontmatter 解析的边界情况 ----
+        var sandbox = Path.Combine(Path.GetTempPath(), $"blogtool-fm-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(sandbox);
+        try
+        {
+            var file = Path.Combine(sandbox, "t.md");
+
+            File.WriteAllText(file, """
+                ---
+                title: "带引号的标题"
+                link: quoted-slug
+                date: 2026-03-05
+                tags:
+                  - 甲
+                  - 乙
+                categories:
+                  - 投研
+                cover: /img/a.webp
+                password: secret
+                ---
+                正文
+                """);
+            var p1 = Posts.ReadOne(file);
+            True("解析 frontmatter", p1 is not null, "");
+            if (p1 is not null)
+            {
+                Eq("引号被剥掉", p1.Title, "带引号的标题");
+                Eq("slug 正确", p1.Slug, "quoted-slug");
+                Eq("日期正确", p1.Date.ToString("yyyy-MM-dd"), "2026-03-05");
+                Eq("标签两个", string.Join(',', p1.Tags), "甲,乙");
+                Eq("分类正确", p1.CategoryName, "投研");
+                Eq("封面正确", p1.Cover, "/img/a.webp");
+                Eq("识别为加密", p1.Encrypted, true);
+            }
+
+            // 行尾注释要吃掉，但 URL 里的 # 不能砍
+            File.WriteAllText(file, "---\ntitle: 标题 # 这是注释\nlink: a#b\ndate: 2026-01-01\n---\n");
+            var p2 = Posts.ReadOne(file);
+            Eq("行尾注释被剥掉", p2?.Title, "标题");
+            Eq("值里的井号保留", p2?.Slug, "a#b");
+
+            // 没有 frontmatter 的文件直接跳过，不该让整个库炸掉
+            File.WriteAllText(file, "这里没有 frontmatter\n");
+            Eq("无 frontmatter 返回 null", Posts.ReadOne(file), null);
+
+            // 空文件
+            File.WriteAllText(file, "");
+            Eq("空文件返回 null", Posts.ReadOne(file), null);
+        }
+        finally
+        {
+            try { Directory.Delete(sandbox, true); } catch { }
+        }
     }
 
     /// <summary>

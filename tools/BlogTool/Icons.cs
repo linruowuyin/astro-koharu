@@ -18,6 +18,11 @@ internal static class Icons
     public static readonly Color PublishColor = Color.FromArgb(22, 119, 255);  // 蓝：发布
     public static readonly Color RollbackColor = Color.FromArgb(200, 72, 72);  // 红：危险操作
 
+    // 浏览类功能的颜色刻意与四个动作卡区分开：那四张是「改动仓库」，
+    // 这两个是「查看」，不该看着像又一个要执行的批次操作。
+    public static readonly Color PostsColor = Color.FromArgb(124, 92, 200);    // 紫：文章库
+    public static readonly Color PreviewColor = Color.FromArgb(20, 150, 140); // 青：本地预览
+
     public static readonly Color Brand = PublishColor;
 
     /// <summary>
@@ -195,6 +200,33 @@ internal static class Icons
             using var dot = new SolidBrush(Color.White);
             g.FillEllipse(dot, 10.6f, 16.8f, 2.8f, 2.8f);
         }, size, color, scale);
+
+    /// <summary>文章库：左边一列圆点，右边一列横线，就是个列表的样子。</summary>
+    public static Bitmap Posts(int size, float scale = 1f)
+        => Render((g, _) =>
+        {
+            using var pen = Stroke(PostsColor, 1.9f);
+            using var dot = new SolidBrush(PostsColor);
+            foreach (var y in new[] { 6.5f, 12f, 17.5f })
+            {
+                g.FillEllipse(dot, 3f, y - 1.1f, 2.2f, 2.2f);
+                g.DrawLine(pen, 8.5f, y, 21f, y);
+            }
+        }, size, PostsColor, scale);
+
+    /// <summary>本地预览：一个浏览器窗口，右上角带个播放三角。</summary>
+    public static Bitmap Preview(int size, float scale = 1f)
+        => Render((g, _) =>
+        {
+            using var pen = Stroke(PreviewColor, 1.9f);
+            g.DrawRectangle(pen, 2.6f, 4f, 18.8f, 16f);
+            // 标题栏分隔线
+            g.DrawLine(pen, 2.6f, 8.4f, 21.4f, 8.4f);
+            // 播放三角：预览就是「跑起来看」
+            var tri = new[] { new PointF(10f, 11.4f), new PointF(10f, 18f), new PointF(16.4f, 14.7f) };
+            using var fill = new SolidBrush(PreviewColor);
+            g.FillPolygon(fill, tri);
+        }, size, PreviewColor, scale);
 
     // ============ 应用图标 ============
 
