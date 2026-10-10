@@ -61,5 +61,19 @@ internal static class Ui
         f.BackColor = Color.White;
         f.ForeColor = Fg;
         f.Font = new Font("Microsoft YaHei UI", 9F);
+        ApplyAppIcon(f);
+    }
+
+    /// <summary>给窗口套上应用图标，标题栏和任务栏才不是空白。</summary>
+    public static void ApplyAppIcon(Form f)
+    {
+        try
+        {
+            f.Icon = Icons.ToIcon(Icons.App(32));
+        }
+        catch
+        {
+            // 图标画不出来不影响功能，别为此让程序起不来。
+        }
     }
 }

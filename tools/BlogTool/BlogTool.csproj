@@ -11,6 +11,11 @@
     <LangVersion>latest</LangVersion>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <CodePage>65001</CodePage>
+    <!--
+      exe 在资源管理器/任务栏里的图标。文件是生成的产物但要提交进仓库，
+      改了图形就在 test 目录重跑一次 icon 生成命令即可。
+    -->
+    <ApplicationIcon>assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <!--

@@ -92,6 +92,7 @@ internal static class Program
             "newpost" => new NewPostDialog(Categories.Read(), "10月第二周宏观利率周评"),
             "rollback" => new RollbackDialog(),
             "commit" => BuildCommitSample(),
+            "icons" => BuildIconSheet(),
             _ => null,
         };
 
@@ -143,6 +144,62 @@ internal static class Program
             new("D", "删除", "public/old-cover.png", null, null),
         };
         return new CommitDialog(files, "feat: 更新行情条并新增一篇测试文章 (10-10 15:20)");
+    }
+
+    /// <summary>图标检视页：把所有图标按实际使用尺寸铺开看。</summary>
+    private static Form BuildIconSheet()
+    {
+        var sheet = new Form
+        {
+            ClientSize = new Size(820, 480),
+            BackColor = Color.White,
+            FormBorderStyle = FormBorderStyle.FixedSingle,
+        };
+
+        var items = new (string Name, Func<int, Bitmap> Make)[]
+        {
+            ("新建文章", s => Icons.NewPost(s)),
+            ("图片更新", s => Icons.Image(s)),
+            ("发布",     s => Icons.Publish(s)),
+            ("回滚",     s => Icons.Rollback(s)),
+            ("文档",     s => Icons.Doc(s, Color.FromArgb(140, 148, 160))),
+        };
+
+        var y = 24;
+        foreach (var (name, make) in items)
+        {
+            var x = 30;
+            foreach (var size in new[] { 16, 24, 32, 48, 64 })
+            {
+                var pic = new PictureBox
+                {
+                    Bounds = new Rectangle(x, y, size, size),
+                    SizeMode = PictureBoxSizeMode.Zoom,
+                    Image = make(size),
+                    BackColor = Color.FromArgb(250, 251, 252),
+                };
+                sheet.Controls.Add(pic);
+                x += size + 12;
+            }
+            var label = new Label
+            {
+                Text = name,
+                Bounds = new Rectangle(x + 10, y + 18, 120, 24),
+                AutoSize = false,
+                Font = new Font("Microsoft YaHei UI", 10F),
+            };
+            sheet.Controls.Add(label);
+            y += 84;
+        }
+
+        var logo = new PictureBox
+        {
+            Bounds = new Rectangle(600, 40, 180, 180),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Image = Icons.App(180),
+        };
+        sheet.Controls.Add(logo);
+        return sheet;
     }
 }
 
@@ -224,19 +281,20 @@ internal static class SelfTest
 
 internal sealed class MainForm : Form
 {
-    private static readonly Color Bg = Color.FromArgb(240, 242, 245);
-    private static readonly Color Card = Color.White;
-    private static readonly Color Line = Color.FromArgb(216, 220, 226);
+    private static readonly Color Bg = Color.FromArgb(244, 246, 249);
+    private static readonly Color Line = Color.FromArgb(222, 226, 232);
     private static readonly Color Fg = Color.FromArgb(28, 32, 38);
     private static readonly Color Dim = Color.FromArgb(120, 128, 140);
     private static readonly Color Accent = Color.FromArgb(22, 119, 255);
     private static readonly Color Good = Color.FromArgb(22, 160, 90);
     private static readonly Color Bad = Color.FromArgb(200, 60, 60);
 
-    private readonly Button _newPost = new();
-    private readonly Button _lqip = new();
-    private readonly Button _publish = new();
-    private readonly Button _rollback = new();
+    // 卡片在 BuildUi 里创建，readonly 字段只能写在构造函数体内赋值，所以放开。
+    private ActionCard _newPost = null!;
+    private ActionCard _lqip = null!;
+    private ActionCard _publish = null!;
+    private ActionCard _rollback = null!;
+    private readonly RepoBar _repo = new();
     private readonly TextBox _log = new();
     private readonly Panel _logPanel = new();
     private readonly Panel _logHost = new();
@@ -248,68 +306,102 @@ internal sealed class MainForm : Form
     {
         Text = "博客工具";
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(900, 580);
-        MinimumSize = new Size(780, 560);
+        ClientSize = new Size(972, 600);
+        MinimumSize = new Size(900, 620);
         BackColor = Bg;
         ForeColor = Fg;
         Font = new Font("Microsoft YaHei UI", 9F);
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
+        DoubleBuffered = true;
+        Ui.ApplyAppIcon(this);
 
         BuildUi();
+        // 打开窗口就把仓库状态拉一次，状态条不用等用户点。
+        Load += (_, _) => _ = RefreshRepoAsync();
 
         // 窗口可以拖边框改大小，日志区跟着撑满剩余空间。
         Resize += (_, _) =>
         {
-            _logHost.Bounds = new Rectangle(20, 232, ClientSize.Width - 40, ClientSize.Height - 252);
-            _status.Bounds = new Rectangle(22, 200, ClientSize.Width - 44, 24);
+            _logHost.Bounds = new Rectangle(20, 258, ClientSize.Width - 40, ClientSize.Height - 278);
+            _status.Bounds = new Rectangle(22, 228, ClientSize.Width - 44, 24);
         };
     }
 
     private void BuildUi()
     {
-        // ---- 标题 ----
+        var scale = DeviceDpi / 96f;
+
+        // ---- 标题区 ----
+        var logo = new PictureBox
+        {
+            Bounds = new Rectangle(22, 15, 34, 34),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Image = Icons.App(34),
+        };
         var title = new Label
         {
             Text = "博客工具",
             Font = new Font("Microsoft YaHei UI", 15F, FontStyle.Bold),
             AutoSize = true,
-            Location = new Point(20, 16),
+            Location = new Point(66, 15),
         };
         var sub = new Label
         {
             Text = Project.Root,
             ForeColor = Dim,
             AutoSize = true,
-            Location = new Point(22, 46),
-            MaximumSize = new Size(800, 0),
+            Location = new Point(67, 42),
+            MaximumSize = new Size(820, 0),
+        };
+        // 一条细线把标题区和内容区分开，纯靠留白显得太空
+        var headerLine = new Panel
+        {
+            Bounds = new Rectangle(22, 62, ClientSize.Width - 44, 1),
+            BackColor = Line,
         };
 
-        // ---- 四个功能按钮 ----
-        MakeActionButton(_newPost, "新建文章", "填标题和分类", 20, 84,
-            async () => await RunNewPostAsync());
-        MakeActionButton(_lqip, "图片更新", "生成占位图", 243, 84,
-            async () => await RunLqipAsync());
-        MakeActionButton(_publish, "发布", "检查后推送", 466, 84,
-            async () => await RunPublishAsync());
-        MakeActionButton(_rollback, "回滚", "退回上一版", 689, 84,
-            async () => await RunRollbackAsync());
+        // ---- 仓库状态条 ----
+        _repo.Bounds = new Rectangle(22, 74, ClientSize.Width - 44, 34);
+        _repo.RefreshRequested += (_, _) => _ = RefreshRepoAsync();
+
+        // ---- 四个功能卡片 ----
+        var specs = new (string Title, string Desc, string Key, Func<Bitmap> Icon, Color Accent, Func<Task> Run)[]
+        {
+            ("新建文章", "填标题和分类", "1", () => Icons.NewPost(24, scale), Icons.NewPostColor, RunNewPostAsync),
+            ("图片更新", "生成占位图",   "2", () => Icons.Image(24, scale),  Icons.LqipColor,     RunLqipAsync),
+            ("发布",     "检查后推送",   "3", () => Icons.Publish(24, scale), Icons.PublishColor, RunPublishAsync),
+            ("回滚",     "退回上一版",   "4", () => Icons.Rollback(24, scale), Icons.RollbackColor, RunRollbackAsync),
+        };
+
+        var cards = new ActionCard[specs.Length];
+        for (var i = 0; i < specs.Length; i++)
+        {
+            var s = specs[i];
+            var card = new ActionCard(s.Title, s.Desc, s.Key, s.Icon(), s.Accent, () => _ = s.Run());
+            card.Bounds = new Rectangle(22 + i * 234, 118, 222, 102);
+            cards[i] = card;
+        }
+
+        _newPost = cards[0];
+        _lqip = cards[1];
+        _publish = cards[2];
+        _rollback = cards[3];
 
         // ---- 状态栏 ----
         _status.Text = "就绪";
         _status.ForeColor = Dim;
         _status.AutoSize = false;
-        _status.Bounds = new Rectangle(22, 200, 856, 24);
+        _status.Bounds = new Rectangle(22, 228, ClientSize.Width - 44, 24);
         _status.TextAlign = ContentAlignment.MiddleLeft;
 
         // ---- 日志区 ----
         // 沿用浅色系：深色日志块贴在浅色窗口里像贴错了一块。
         //
         // 用绝对坐标而不是 Dock：Dock 的填充顺序要按 z-order 反推，
-        // 一旦控件添加次序变了，日志区就会盖到按钮上（踩过一次）。
-        // 日志区的高度跟着窗口走，Form.Resize 时再调。
-        _logPanel.Bounds = new Rectangle(12, 10, 836, 296);
-        _logPanel.BackColor = Color.FromArgb(250, 251, 252);
+        // 一旦控件添加次序变了，日志区就会盖到卡片上（踩过一次）。
+        _logPanel.Bounds = new Rectangle(12, 10, 892, 296);
+        _logPanel.BackColor = Color.FromArgb(252, 252, 253);
         _logPanel.Padding = new Padding(12, 8, 12, 8);
 
         var logTitle = new Label
@@ -326,11 +418,11 @@ internal sealed class MainForm : Form
         _clearLog.Size = new Size(58, 24);
         _clearLog.Click += (_, _) => _log.Clear();
 
-        _log.Bounds = new Rectangle(10, 38, 816, 250);
+        _log.Bounds = new Rectangle(10, 38, 872, 250);
         _log.Multiline = true;
         _log.ReadOnly = true;
         _log.ScrollBars = ScrollBars.Vertical;
-        _log.BackColor = Color.FromArgb(250, 251, 252);
+        _log.BackColor = Color.FromArgb(252, 252, 253);
         _log.ForeColor = Color.FromArgb(60, 66, 74);
         _log.BorderStyle = BorderStyle.None;
         _log.Font = new Font("Consolas", 9F);
@@ -346,33 +438,47 @@ internal sealed class MainForm : Form
             _log.Height = Math.Max(80, _logPanel.ClientSize.Height - 46);
         };
 
-        var logHost = _logHost;
-        logHost.Bounds = new Rectangle(20, 232, 860, 316);
-        logHost.Controls.Add(_logPanel);
+        _logHost.Bounds = new Rectangle(20, 258, ClientSize.Width - 40, ClientSize.Height - 278);
+        _logHost.Controls.Add(_logPanel);
 
         // 日志区必须最后加：WinForms 里后加的控件 z-order 靠后，
-        // 靠后才会被先加的按钮和标题压住。
-        Controls.Add(logHost);
+        // 靠后才会被先加的卡片和标题压住。
+        Controls.Add(_logHost);
         Controls.Add(_status);
+        Controls.AddRange(cards);
+        Controls.Add(headerLine);
+        Controls.Add(_repo);
         Controls.Add(sub);
         Controls.Add(title);
-        Controls.AddRange([_newPost, _lqip, _publish, _rollback]);
-        logHost.SendToBack();
+        Controls.Add(logo);
+        _logHost.SendToBack();
     }
 
-    private void MakeActionButton(Button b, string text, string desc, int x, int y, Action onClick)
+    /// <summary>数字键 1-4 直达四个功能，省得用鼠标找。</summary>
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
-        b.Text = $"{text}\n\n{desc}";
-        b.Size = new Size(203, 96);
-        b.Location = new Point(x, y);
-        b.FlatStyle = FlatStyle.Flat;
-        b.FlatAppearance.BorderColor = Line;
-        b.BackColor = Card;
-        b.ForeColor = Fg;
-        b.TextAlign = ContentAlignment.MiddleCenter;
-        b.Cursor = Cursors.Hand;
-        b.Font = new Font("Microsoft YaHei UI", 9.5F);
-        b.Click += (_, _) => onClick();
+        switch (keyData)
+        {
+            case Keys.D1: _ = RunNewPostAsync(); return true;
+            case Keys.D2: _ = RunLqipAsync(); return true;
+            case Keys.D3: _ = RunPublishAsync(); return true;
+            case Keys.D4: _ = RunRollbackAsync(); return true;
+        }
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    /// <summary>读一次仓库状态，填到顶部状态条上。</summary>
+    private async Task RefreshRepoAsync()
+    {
+        try
+        {
+            _repo.SetState(await Git.GetStateAsync());
+        }
+        catch (Exception ex)
+        {
+            Log($"读仓库状态失败：{ex.Message}");
+            _repo.SetUnknown();
+        }
     }
 
     // ============ 日志 ============

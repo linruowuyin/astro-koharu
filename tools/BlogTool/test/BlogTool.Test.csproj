@@ -20,6 +20,8 @@
   <ItemGroup>
     <!-- Publish 里的流程要弹对话框，属于界面层，测试只覆盖底层逻辑。 -->
     <Compile Include="..\Core\*.cs" Exclude="..\Core\Publish.cs" />
+    <Compile Include="..\Icons.cs" />
+    <Compile Include="..\Ui.cs" />
   </ItemGroup>
 
 </Project>

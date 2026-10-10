@@ -13,9 +13,24 @@ internal static class Program
     private static int _passed;
     private static int _failed;
 
-    private static async Task<int> Main()
+    private static async Task<int> Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
+
+        // 生成应用图标：.ico 是提交进仓库的产物，改图标就重跑一次
+        //   dotnet run -c Release -- --icon ../../assets/app.ico
+        var iconAt = Array.IndexOf(args, "--icon");
+        if (iconAt >= 0)
+        {
+            var outPath = iconAt + 1 < args.Length
+                ? args[iconAt + 1]
+                : Path.Combine(AppContext.BaseDirectory, "app.ico");
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
+            Icons.SaveIco(outPath);
+            var info = new FileInfo(outPath);
+            Console.WriteLine($"已生成 {outPath}（{info.Length / 1024.0:F1} KB）");
+            return 0;
+        }
 
         if (!Project.TryLocate())
         {
