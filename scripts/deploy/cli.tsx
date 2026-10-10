@@ -152,7 +152,8 @@ function DeployApp() {
     return (
       <Box flexDirection="column">
         <Text dimColor>
-          分支 {state.branch} · 与远端 领先 {state.ahead} / 落后 {state.behind}
+          分支 {state.branch}
+          {state.upstreamMissing ? ' · 上游未配置' : ` · 领先 ${state.ahead} / 落后 ${state.behind}`}
         </Text>
         <Box marginTop={1}>
           <FileSelector
@@ -316,7 +317,12 @@ async function cmdStatus() {
   const state = await getState();
   const counts = summarize(state.files);
   console.log(`\n分支：${state.branch}`);
-  console.log(`领先远端：${state.ahead}  落后远端：${state.behind}`);
+  if (state.upstreamMissing) {
+    // 上游缺失时不能报 "领先 0 / 落后 0"，那会让人误以为和远端一致。
+    console.log('上游追踪：未配置（首次推送时会自动建立）');
+  } else {
+    console.log(`领先远端：${state.ahead}  落后远端：${state.behind}`);
+  }
   console.log(`改动文件：${state.files.length} 项`);
   for (const [label, n] of Object.entries(counts)) console.log(`  ${label}：${n}`);
   if (state.files.length > 0) {

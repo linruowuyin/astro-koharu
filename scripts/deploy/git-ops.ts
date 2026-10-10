@@ -25,6 +25,8 @@ export interface GitState {
   files: ChangedFile[];
   ahead: number;
   behind: number;
+  /** 本地分支没有配置上游追踪时为 true，此时 ahead/behind 不可信 */
+  upstreamMissing: boolean;
   /** 本地分支落后远端时为远端提交信息摘要，否则 null */
   diverged: boolean;
 }
@@ -166,14 +168,21 @@ export async function getState(): Promise<GitState> {
     }
   }
 
-  // 与远端的领先/落后。用 @{upstream} 而不是硬编码 origin/main，
-  // 这样换远端名或改上游跟踪都不会失效。
-  const counts = await git(['rev-list', '--left-right', '--count', 'HEAD...@{upstream}'], { allowFail: true });
-  const [aheadRaw, behindRaw] = counts.trim().split(/\s+/);
-  const ahead = Number(aheadRaw) || 0;
-  const behind = Number(behindRaw) || 0;
+  // 与远端的领先/落后。用探测到的上游而不是硬编码 origin/main，
+  // 这样换远端名或改上游跟踪都不会失效。上游缺失时如实返回 null，
+  // 不能默认为 0/0——那会让用户以为「和远端一致」，实际根本没连上。
+  const upstream = await getUpstream(branch);
+  let ahead = 0;
+  let behind = 0;
+  if (upstream) {
+    const ref = `${upstream.remote}/${branch}`;
+    const counts = await git(['rev-list', '--left-right', '--count', `HEAD...${ref}`], { allowFail: true });
+    const [aheadRaw, behindRaw] = counts.trim().split(/\s+/);
+    ahead = Number(aheadRaw) || 0;
+    behind = Number(behindRaw) || 0;
+  }
 
-  return { branch, files, ahead, behind, diverged: ahead > 0 && behind > 0 };
+  return { branch, files, ahead, behind, upstreamMissing: !upstream, diverged: ahead > 0 && behind > 0 };
 }
 
 /** 把指定路径加入暂存区。逐个 add 而不是 add .，避免误提交。 */
@@ -187,13 +196,35 @@ export async function commit(message: string): Promise<void> {
 }
 
 /**
- * 推送当前分支到上游。
- * 用 --force-with-lease 而不是 --force：前者会在远端被别人推过新提交时
- * 拒绝覆盖，这是回滚场景下唯一安全的强推方式。
+ * 取当前分支配置的上游名与远端名。
+ * 上游可能因为 rebase --onto、reset --hard、或手工改配置而丢失，
+ * 依赖它会让裸 git push 直接失败，所以先探测再用。
+ */
+export async function getUpstream(branch: string): Promise<{ remote: string; mergeRef: string } | null> {
+  const remote = await git(['config', '--get', `branch.${branch}.remote`], { allowFail: true }).then((s) => s.trim());
+  const mergeRef = await git(['config', '--get', `branch.${branch}.merge`], { allowFail: true }).then((s) => s.trim());
+  if (!remote || !mergeRef) return null;
+  return { remote, mergeRef };
+}
+
+/**
+ * 推送到远端。
+ *
+ * 不直接用裸 `git push`：它依赖 branch.<name>.merge 配置，而这个配置在
+ * rebase --onto / reset --hard / 手工改配置后可能丢失，届时 push 会报
+ * "has no upstream branch"。这里显式带上远端名与分支名；顺带用
+ * --set-upstream 把丢失的上游配置补回来，避免用户下次再踩。
  */
 export async function push(options: { force?: boolean } = {}): Promise<string> {
+  const branch = (await git(['rev-parse', '--abbrev-ref', 'HEAD'])).trim();
+  const upstream = await getUpstream(branch);
+  const remote = upstream?.remote ?? 'origin';
+
   const args = ['push'];
   if (options.force) args.push('--force-with-lease');
+  // 上游缺失时补一次 --set-upstream，把配置修回来。
+  if (!upstream) args.push('--set-upstream', remote, branch);
+  else args.push(remote, branch);
   return git(args);
 }
 
@@ -233,6 +264,17 @@ export async function hasStagedChanges(): Promise<boolean> {
  * @param expectedHead 回滚前 HEAD 的完整 sha，作为 lease 的基准
  */
 export async function resetAndPush(target: string, expectedHead: string): Promise<void> {
+  const branch = (await git(['rev-parse', '--abbrev-ref', 'HEAD'])).trim();
+  const upstream = await getUpstream(branch);
+  const remote = upstream?.remote ?? 'origin';
+
   await git(['reset', '--hard', target]);
-  await git(['push', '--force-with-lease', `HEAD:${expectedHead}`]);
+  await git([
+    'push',
+    remote,
+    branch,
+    // lease 绑定回滚前的远端 sha：若期间有人推了新提交就会拒绝，
+    // 而不是把别人的改动无声覆盖掉。
+    `--force-with-lease=${expectedHead}:${remote}/${branch}`,
+  ]);
 }
