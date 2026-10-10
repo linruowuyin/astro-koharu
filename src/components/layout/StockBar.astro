@@ -59,6 +59,10 @@
       bar._html = rows.map(function (row, i) {
         return itemHtml(list[i], row);
       }).join('');
+      // track 容器只在首次渲染时创建，后续 layout 复用它。
+      if (!bar.querySelector('.stock-bar__track')) {
+        bar.innerHTML = '<div class="stock-bar__track"></div>';
+      }
       layout(bar);
       bar.dataset.state = 'ready';
     }
@@ -68,7 +72,12 @@
     function layout(bar) {
       var html = bar._html;
       var track = bar.querySelector('.stock-bar__track');
-      if (!html || !track) return;
+      if (!html || !track) {
+        // 走到这里说明 track 容器没建出来，属于代码问题，必须留下痕迹，
+        // 否则页面上只会看到一条空行情条而无任何线索。
+        console.warn('[stock-bar] 缺少 track 容器，跳过布局');
+        return;
+      }
 
       bar.classList.remove('stock-bar--centered', 'stock-bar--scrolling');
       track.innerHTML = html;
