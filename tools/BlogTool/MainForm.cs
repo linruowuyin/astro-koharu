@@ -84,6 +84,15 @@ internal static class Program
     /// 布局问题靠肉眼读代码很难发现——控件被挤到可视区外、Dock 顺序反了、
     /// 文字被截断，这些只有真渲染一次才看得见。
     /// </summary>
+    private static Form ExpandedSettings()
+    {
+        var dlg = new SettingsDialog();
+        // 挂 Shown 而不是 Load：LoadAsync 是异步的，Load 那一刻凭据还没读回来，
+        // 展开出来的表单会是空的，和用户真点「改为手动设置」看到的不一样。
+        dlg.Shown += (_, _) => dlg.ExpandManualForShot();
+        return dlg;
+    }
+
     private static void Shot(string target, string which)
     {
         // 各弹窗类型不同，统一按 Form 收口。
@@ -93,6 +102,7 @@ internal static class Program
             "rollback" => new RollbackDialog(),
             "commit" => new CommitDialog(BuildSampleFiles(), "feat: 更新行情条并新增一篇测试文章 (10-10 15:20)"),
             "settings" => new SettingsDialog(),
+            "settings-open" => ExpandedSettings(),
             "icons" => BuildIconSheet(),
             _ => null,
         };
@@ -148,7 +158,6 @@ internal static class Program
     {
         var sheet = new Form
         {
-            ClientSize = new Size(820, 480),
             BackColor = Color.White,
             FormBorderStyle = FormBorderStyle.FixedSingle,
         };
@@ -160,9 +169,15 @@ internal static class Program
             ("发布",     s => Icons.Publish(s)),
             ("回滚",     s => Icons.Rollback(s)),
             ("文档",     s => Icons.Doc(s, Color.FromArgb(140, 148, 160))),
+            ("对勾",     s => Icons.Check(s, Color.FromArgb(22, 150, 90))),
+            ("警告",     s => Icons.Warn(s, Color.FromArgb(214, 148, 26))),
+            ("齿轮",     s => Icons.Gear(s, Color.FromArgb(120, 128, 140))),
         };
 
         var y = 24;
+        // 高度跟着图标条数走。写死 480 的时候多加两行图标，最下面那两行
+        // 会被窗口切掉——检视页自己藏起来的东西，等于没检视。
+        sheet.ClientSize = new Size(820, y + items.Length * 84 + 24);
         foreach (var (name, make) in items)
         {
             var x = 30;

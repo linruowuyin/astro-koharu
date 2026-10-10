@@ -166,6 +166,36 @@ internal static class Icons
             g.DrawEllipse(pen, 9.4f, 9.4f, 5.2f, 5.2f);
         }, size, color, scale);
 
+    // ============ 状态图标 ============
+
+    /// <summary>实心圆 + 白对勾：一切正常的状态。</summary>
+    public static Bitmap Check(int size, Color color, float scale = 1f)
+        => Render((g, _) =>
+        {
+            using var disc = new SolidBrush(color);
+            g.FillEllipse(disc, 2f, 2f, 20f, 20f);
+            using var pen = Stroke(Color.White, 2.4f);
+            g.DrawLines(pen, new[]
+            {
+                new PointF(6.6f, 12.3f), new PointF(10.3f, 16f), new PointF(17.6f, 8.4f),
+            });
+        }, size, color, scale);
+
+    /// <summary>实心三角 + 白感叹号：需要注意的状态。</summary>
+    public static Bitmap Warn(int size, Color color, float scale = 1f)
+        => Render((g, _) =>
+        {
+            using var tri = new SolidBrush(color);
+            g.FillPolygon(tri, new[]
+            {
+                new PointF(12f, 2.2f), new PointF(23.2f, 21.2f), new PointF(0.8f, 21.2f),
+            });
+            using var pen = Stroke(Color.White, 2.2f);
+            g.DrawLine(pen, 12f, 9.2f, 12f, 15f);
+            using var dot = new SolidBrush(Color.White);
+            g.FillEllipse(dot, 10.6f, 16.8f, 2.8f, 2.8f);
+        }, size, color, scale);
+
     // ============ 应用图标 ============
 
     /// <summary>
