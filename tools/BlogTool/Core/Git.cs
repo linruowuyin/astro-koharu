@@ -319,6 +319,77 @@ public static class Git
 
     private static string Quote(string value) => value.Contains(' ') ? $"\"{value}\"" : value;
 
+    /// <summary>
+    /// 跑一条 git 命令并往标准输入喂内容。
+    ///
+    /// credential 的 fill / approve / reject 都靠 stdin 传参，没法拼在命令行上。
+    ///
+    /// 这里必须同时做两件事，否则程序会被冻住：
+    ///   · GIT_TERMINAL_PROMPT=0 让 git 不要转去读终端——本程序没有终端，
+    ///     它会一直等下去
+    ///   · GCM_INTERACTIVE=never 让 Git Credential Manager 不要弹自己的窗口
+    ///     或去开浏览器（实测只设前者不够，fill 照样会卡在 GUI 流程上）
+    /// 另外还兜了一个硬超时：凭据不存在时这两道保险都可能被绕过，
+    /// 与其让设置界面挂死，不如超时返回，把「读不到」如实报出去。
+    /// </summary>
+    public static async Task<(int Code, string Output, string Error)> RunWithInputAsync(
+        string args, string stdin, int timeoutMs = 15000)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "git",
+            WorkingDirectory = RepoRoot,
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+        };
+        psi.Environment["GIT_TERMINAL_PROMPT"] = "0";
+        psi.Environment["GCM_INTERACTIVE"] = "never";
+        foreach (var arg in Split($"-c core.quotepath=false {args}"))
+            psi.ArgumentList.Add(arg);
+
+        using var proc = Process.Start(psi) ?? throw new InvalidOperationException("无法启动 git");
+
+        // 先把 stdin 写完并关掉，否则 git 会一直等输入
+        await proc.StandardInput.WriteAsync(stdin);
+        proc.StandardInput.Close();
+
+        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+        var stderrTask = proc.StandardError.ReadToEndAsync();
+
+        using var cts = new CancellationTokenSource(timeoutMs);
+        try
+        {
+            await proc.WaitForExitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            TryKill(proc);
+            return (-2, "", $"{args} 在 {timeoutMs} 毫秒内没有返回（多半是凭据助手在等交互），已终止");
+        }
+
+        // 进程退出后再等流读完，避免管道缓冲区写满造成死锁
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
+        return (proc.ExitCode, stdout, stderr);
+    }
+
+    private static void TryKill(Process proc)
+    {
+        try
+        {
+            if (!proc.HasExited) proc.Kill(entireProcessTree: true);
+        }
+        catch
+        {
+            // 已经退了就算了
+        }
+    }
+
     /// <summary>把 2026-10-10T14:32 压成 10-10 14:32，省地方。</summary>
     private static string FormatDate(string iso) => iso.Length < 16 ? iso : $"{iso[5..10]} {iso[11..16]}";
 }

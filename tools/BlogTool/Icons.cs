@@ -145,6 +145,27 @@ internal static class Icons
             g.DrawLines(pen, new[] { new PointF(14, 2.5f), new PointF(14, 6.5f), new PointF(18, 6.5f) });
         }, size, color, scale);
 
+    /// <summary>齿轮：设置入口。</summary>
+    public static Bitmap Gear(int size, Color color, float scale = 1f)
+        => Render((g, _) =>
+        {
+            using var pen = Stroke(color, 1.9f);
+            // 外圈八齿
+            g.DrawArc(pen, 4.2f, 4.2f, 15.6f, 15.6f, 22.5f, 45f);
+            g.DrawArc(pen, 4.2f, 4.2f, 15.6f, 15.6f, 112.5f, 45f);
+            g.DrawArc(pen, 4.2f, 4.2f, 15.6f, 15.6f, 202.5f, 45f);
+            g.DrawArc(pen, 4.2f, 4.2f, 15.6f, 15.6f, 292.5f, 45f);
+            // 四个方向的齿
+            foreach (var a in new[] { 0f, 90f, 180f, 270f })
+            {
+                var rad = a * MathF.PI / 180f;
+                var dx = MathF.Cos(rad);
+                var dy = MathF.Sin(rad);
+                g.DrawLine(pen, 12f + dx * 7.2f, 12f + dy * 7.2f, 12f + dx * 10.4f, 12f + dy * 10.4f);
+            }
+            g.DrawEllipse(pen, 9.4f, 9.4f, 5.2f, 5.2f);
+        }, size, color, scale);
+
     // ============ 应用图标 ============
 
     /// <summary>

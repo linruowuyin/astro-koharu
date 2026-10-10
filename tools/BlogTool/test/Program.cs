@@ -107,9 +107,108 @@ internal static class Program
         True("分叉判断有值", state.Diverged == false || state.Behind > 0,
             $"ahead={state.Ahead} behind={state.Behind} diverged={state.Diverged}");
 
+        // ---- 凭据输出解析与遮蔽（纯函数，不碰真实凭据）----
+        var parsed = Credentials.ParseCredentialOutput(
+            "protocol=https\r\nhost=github.com\r\nusername=linruowuyin\r\npassword=ghp_abcdefghijklmnopqrstuvwxyz0123456789\r\n");
+        Eq("解析用户名", parsed.Username, "linruowuyin");
+        Eq("解析密码长度", parsed.Password.Length, 40);
+
+        Eq("遮蔽短值不留明文", Credentials.Mask("abcdef"), "••••••");
+        var masked = Credentials.Mask("ghp_abcdefghijklmnopqrstuvwxyz0123456789");
+        True("遮蔽保留头尾", masked.StartsWith("gh") && masked.EndsWith("89"), masked);
+        True("遮蔽不含中间明文", !masked.Contains("abcdefgh"), masked);
+        Eq("遮蔽空值", Credentials.Mask(""), "");
+
+        // ---- 凭据生命周期（临时仓库 + 临时 store + 非 GitHub 域名）----
+        await RunCredentialLifecycleTestAsync();
+
         Console.WriteLine();
         Console.WriteLine($"通过 {_passed}，失败 {_failed}");
         return _failed == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// 用一个临时 git 仓库和临时 credential store 走一遍写入/读取/清除。
+    ///
+    /// 两道隔离缺一不可：
+    ///   · 域名用 github.test 而不是 github.com——万一 store 没生效，
+    ///     也只会去问一个不存在的站点，绝不会覆盖真实凭据
+    ///   · 临时仓库的本地配置里先写一个空的 helper 清空继承来的助手链，
+    ///     再接 store，全局那个 GCM 不会被调用
+    /// </summary>
+    private static async Task RunCredentialLifecycleTestAsync()
+    {
+        var sandbox = Path.Combine(Path.GetTempPath(), $"blogtool-cred-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(sandbox);
+        var storeFile = Path.Combine(sandbox, "store.txt").Replace("\\", "/");
+        var originalRoot = Git.RepoRoot;
+
+        try
+        {
+            Run("git", "init", "--quiet", sandbox);
+            // 空 helper 是「清空继承来的助手链」的标准写法，必须排在最前面，
+            // 否则全局那个 GCM 仍会被调用，测试就会碰到真实凭据。
+            Run("git", "-C", sandbox, "config", "--local", "credential.helper");
+            Run("git", "-C", sandbox, "config", "--local", "--add", "credential.helper", "");
+            Run("git", "-C", sandbox, "config", "--local", "--add", "credential.helper", $"store --file={storeFile}");
+
+            Git.RepoRoot = sandbox;
+            const string host = "github.test";
+
+            Eq("初始没有凭据", (await Credentials.ReadAsync(host)).Exists, false);
+
+            await Credentials.SaveAsync("test-user", "ghp_faketoken000000000000000000000000", host);
+            var afterSave = await Credentials.ReadAsync(host);
+            Eq("写入后有凭据", afterSave.Exists, true);
+            Eq("写入后用户名正确", afterSave.Username, "test-user");
+            Eq("写入后密码长度正确", afterSave.PasswordLength, "ghp_faketoken000000000000000000000000".Length);
+
+            // 确认令牌只落在临时文件里
+            True("令牌只写进临时存储",
+                File.ReadAllText(storeFile).Contains("ghp_faketoken"), storeFile);
+
+            await Credentials.ClearAsync("test-user", host);
+            Eq("清除后没有凭据", (await Credentials.ReadAsync(host)).Exists, false);
+
+            // 空输入不该被当成有效凭据
+            try
+            {
+                await Credentials.SaveAsync("", "token", host);
+                True("空用户名应被拒绝", false, "没有抛异常");
+            }
+            catch (ArgumentException)
+            {
+                True("空用户名被拒绝", true, "");
+            }
+
+            try
+            {
+                await Credentials.SaveAsync("test-user", "", host);
+                True("空令牌应被拒绝", false, "没有抛异常");
+            }
+            catch (ArgumentException)
+            {
+                True("空令牌被拒绝", true, "");
+            }
+        }
+        finally
+        {
+            Git.RepoRoot = originalRoot;
+            try { Directory.Delete(sandbox, recursive: true); } catch { /* 临时目录，删不掉也无所谓 */ }
+        }
+    }
+
+    private static void Run(string exe, params string[] args)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo(exe)
+        {
+            WorkingDirectory = Path.GetTempPath(),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        foreach (var a in args) psi.ArgumentList.Add(a);
+        using var p = System.Diagnostics.Process.Start(psi);
+        p?.WaitForExit(20000);
     }
 
     private static void True(string name, bool ok, string detail)

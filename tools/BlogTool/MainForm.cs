@@ -91,7 +91,8 @@ internal static class Program
         {
             "newpost" => new NewPostDialog(Categories.Read(), "10月第二周宏观利率周评"),
             "rollback" => new RollbackDialog(),
-            "commit" => BuildCommitSample(),
+            "commit" => new CommitDialog(BuildSampleFiles(), "feat: 更新行情条并新增一篇测试文章 (10-10 15:20)"),
+            "settings" => new SettingsDialog(),
             "icons" => BuildIconSheet(),
             _ => null,
         };
@@ -134,17 +135,13 @@ internal static class Program
     }
 
     /// <summary>造一份假改动清单，用来验证提交对话框的排版。</summary>
-    private static CommitDialog BuildCommitSample()
-    {
-        var files = new List<ChangedFile>
-        {
-            new("M", "修改", "src/components/layout/StockBar.astro", 42, 17),
-            new("M", "修改", "config/site.yaml", 3, 1),
-            new("A", "新增", "src/content/blog/research/测试文章.md", 24, 0),
-            new("D", "删除", "public/old-cover.png", null, null),
-        };
-        return new CommitDialog(files, "feat: 更新行情条并新增一篇测试文章 (10-10 15:20)");
-    }
+    private static List<ChangedFile> BuildSampleFiles() =>
+    [
+        new("M", "修改", "src/components/layout/StockBar.astro", 42, 17),
+        new("M", "修改", "config/site.yaml", 3, 1),
+        new("A", "新增", "src/content/blog/research/测试文章.md", 24, 0),
+        new("D", "删除", "public/old-cover.png", null, null),
+    ];
 
     /// <summary>图标检视页：把所有图标按实际使用尺寸铺开看。</summary>
     private static Form BuildIconSheet()
@@ -361,6 +358,29 @@ internal sealed class MainForm : Form
             BackColor = Line,
         };
 
+        // ---- 设置入口（GitHub 凭据）----
+        var settings = new Button
+        {
+            Bounds = new Rectangle(ClientSize.Width - 60, 18, 36, 36),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.White,
+            Cursor = Cursors.Hand,
+            Image = Icons.Gear(20, Color.FromArgb(120, 128, 140), scale),
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TabStop = false,
+        };
+        settings.FlatAppearance.BorderColor = Color.FromArgb(222, 226, 232);
+        settings.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 243, 248);
+        settings.Click += (_, _) =>
+        {
+            using var dialog = new SettingsDialog();
+            dialog.ShowDialog(this);
+            // 凭据可能刚被改过，拉一次仓库状态让状态条跟上
+            _ = RefreshRepoAsync();
+        };
+        settings.MouseEnter += (_, _) => settings.Image = Icons.Gear(20, Icons.Brand, scale);
+        settings.MouseLeave += (_, _) => settings.Image = Icons.Gear(20, Color.FromArgb(120, 128, 140), scale);
+
         // ---- 仓库状态条 ----
         _repo.Bounds = new Rectangle(22, 74, ClientSize.Width - 44, 34);
         _repo.RefreshRequested += (_, _) => _ = RefreshRepoAsync();
@@ -446,6 +466,7 @@ internal sealed class MainForm : Form
         Controls.Add(_logHost);
         Controls.Add(_status);
         Controls.AddRange(cards);
+        Controls.Add(settings);
         Controls.Add(headerLine);
         Controls.Add(_repo);
         Controls.Add(sub);
