@@ -6,13 +6,19 @@ namespace BlogTool;
 /// <summary>
 /// 新建文章对话框。
 ///
-/// 原向导问九件事，这里只问两件——标题和分类，其余自动补。
-/// 实际文章里 description、tags、附注大多本来就是空的，问了也是白问。
+/// 原向导问九件事，这里问四件——标题、分类、描述、标签。后两个留空就不写进
+/// frontmatter：62 篇文章里 description 只有 1 篇、tags 只有 14 篇出现过，
+/// 所以做成可选；但既然偶尔会用到，放在对话框里比事后手填强。
 /// </summary>
 internal sealed class NewPostDialog : Form
 {
+    private const int PadX = 24;
+    private const int ContentW = 652;
+
     private readonly TextBox _title = new();
     private readonly ComboBox _category = new();
+    private readonly TextBox _tags = new();
+    private readonly TextBox _description = new();
     private readonly Label _preview = new();
     private readonly System.Windows.Forms.Timer _debounce = new() { Interval = 350 };
 
@@ -22,13 +28,15 @@ internal sealed class NewPostDialog : Form
 
     public string Title => _title.Text;
     public CategoryInfo SelectedCategory => (CategoryInfo)_category.SelectedItem!;
+    public string Description => _description.Text;
+    public List<string> Tags => PostCreator.ParseTags(_tags.Text);
 
     public NewPostDialog(IReadOnlyList<CategoryInfo> categories, string initialTitle = "")
     {
-        Ui.StyleDialog(this, "新建文章", 700, 340);
+        Ui.StyleDialog(this, "新建文章", 700, 468);
 
-        var titleLabel = Ui.Label("标题", 24, 30, bold: true);
-        _title.SetBounds(24, 56, 652, 30);
+        var titleLabel = Ui.Label("标题", PadX, 26, bold: true);
+        _title.SetBounds(PadX, 50, ContentW, 30);
         _title.Font = new Font("Microsoft YaHei UI", 11F);
         // 回车即提交，省得再点一次按钮。
         _title.KeyDown += (_, e) =>
@@ -38,34 +46,46 @@ internal sealed class NewPostDialog : Form
         // 标题一变就刷新下面的路径预览。
         _title.TextChanged += (_, _) => RefreshPreview();
 
-        var catLabel = Ui.Label("分类", 24, 104, bold: true);
-        _category.SetBounds(24, 130, 320, 28);
+        var catLabel = Ui.Label("分类", PadX, 96, bold: true);
+        _category.SetBounds(PadX, 120, 320, 28);
         _category.DropDownStyle = ComboBoxStyle.DropDownList;
         _category.Items.AddRange([.. categories.Select(c => (object)c)]);
         _category.SelectedIndex = 0;
         _category.SelectedIndexChanged += (_, _) => RefreshPreview();
 
-        _preview.SetBounds(24, 178, 652, 60);
+        var tagsLabel = Ui.Label("标签（可选）", PadX, 162, bold: true);
+        _tags.SetBounds(PadX, 186, ContentW, 28);
+        _tags.Font = new Font("Microsoft YaHei UI", 9.5F);
+        _tags.PlaceholderText = "用顿号或逗号隔开，比如：白银、黄金、贵金属";
+
+        var descLabel = Ui.Label("描述（可选）", PadX, 228, bold: true);
+        _description.SetBounds(PadX, 252, ContentW, 50);
+        _description.Multiline = true;
+        _description.ScrollBars = ScrollBars.Vertical;
+        _description.Font = new Font("Microsoft YaHei UI", 9.5F);
+
+        _preview.SetBounds(PadX, 314, ContentW, 56);
         _preview.ForeColor = Color.FromArgb(120, 128, 140);
         _preview.Font = new Font("Consolas", 8.5F);
         _preview.Text = "";
 
-        var tip = Ui.Label("链接、日期会自动生成。描述、标签、附注可以之后在文章里补。", 24, 244);
+        var tip = Ui.Label("链接与日期会自动生成；描述和标签留空就不写进 frontmatter。", PadX, 374);
         tip.ForeColor = Color.FromArgb(140, 148, 160);
         tip.AutoSize = false;
-        tip.Size = new Size(652, 20);
+        tip.Size = new Size(ContentW, 20);
 
-        var ok = Ui.Button("创建", true, 564, 282, 112, 34);
+        var ok = Ui.Button("创建", true, 564, 410, 112, 34);
         ok.Click += (_, _) =>
         {
             if (!ValidateInput()) return;
             DialogResult = DialogResult.OK;
             Close();
         };
-        var cancel = Ui.Button("取消", false, 444, 282, 112, 34);
+        var cancel = Ui.Button("取消", false, 444, 410, 112, 34);
         cancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
-        Controls.AddRange([titleLabel, _title, catLabel, _category, _preview, tip, ok, cancel]);
+        Controls.AddRange([titleLabel, _title, catLabel, _category,
+            tagsLabel, _tags, descLabel, _description, _preview, tip, ok, cancel]);
         AcceptButton = ok;
         CancelButton = cancel;
 

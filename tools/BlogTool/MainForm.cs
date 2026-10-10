@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -637,8 +638,25 @@ internal sealed class MainForm : Form
 
         try
         {
-            var path = await PostCreator.CreateAsync(dialog.Title.Trim(), dialog.SelectedCategory.Name, dialog.SelectedCategory.Slug);
+            var path = await PostCreator.CreateAsync(
+                dialog.Title.Trim(),
+                dialog.SelectedCategory.Name,
+                dialog.SelectedCategory.Slug,
+                dialog.Description,
+                dialog.Tags);
             Log($"已创建：{path}");
+
+            // 建完直接把源文件打开。省得用户再去资源管理器里翻目录树找这篇。
+            // 打开失败不算创建失败——文件已经落盘了。
+            try
+            {
+                Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+            }
+            catch
+            {
+                // 默认程序关联不上就算了，日志里已经有路径
+            }
+
             Done(true, $"文章已创建\n\n{Path.GetFileName(path)}\n\n在 src\\content\\blog\\{dialog.SelectedCategory.Slug}\\ 下，填好内容后用「发布」推上去。");
         }
         catch (Exception ex)

@@ -7,16 +7,23 @@ namespace BlogTool;
 public static class PostCreator
 {
     /// <summary>
-    /// 建一篇新文章，只写最必要的字段。
+    /// 建一篇新文章。
     ///
-    /// 原向导问九件事（标题/slug/描述/分类/标签/多个附注/草稿/确认），
-    /// 但实际文章里 description 和 tags 大多是空的，附注也很少用。
-    /// 所以这里只问标题和分类，其余按合理默认值补：
+    /// 原向导问九件事（标题/slug/描述/分类/标签/多个附注/草稿/确认），这里问四件：
+    /// 标题、分类，外加两个可选的——描述和标签。这两个在现有文章里分别是
+    /// 1/62 和 14/62 出现过，写进对话框比让人事后手填省事；附注、草稿、
+    /// 自定义 slug 目前一篇都没用到，先不占版面。
+    ///
+    /// 其余字段按合理默认值补：
     ///   · link   —— 标题转拼音，保证 URL 友好
     ///   · date   —— 当前时间
-    ///   · 其余字段不写，模板本身允许缺省
+    ///
+    /// 文件名用中文标题而不是 link：仓库里现存 62 篇全是中文命名，跟随现状，
+    /// 而不是跟官方向导的 slug 命名分道扬镳。
     /// </summary>
-    public static async Task<string> CreateAsync(string title, string categoryName, string slugOfCategory)
+    public static async Task<string> CreateAsync(
+        string title, string categoryName, string slugOfCategory,
+        string description = "", IReadOnlyList<string>? tags = null)
     {
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("标题不能为空");
         if (string.IsNullOrWhiteSpace(slugOfCategory)) throw new ArgumentException("分类不能为空");
@@ -40,6 +47,16 @@ public static class PostCreator
         sb.AppendLine($"title: {YamlQuote(title)}");
         sb.AppendLine($"link: {link}");
         sb.AppendLine($"date: {now}");
+
+        // 字段顺序跟着现有文章走：title / link / date / description / tags / categories
+        if (description.Trim().Length > 0) sb.AppendLine($"description: {YamlQuote(description.Trim())}");
+
+        if (tags is { Count: > 0 })
+        {
+            sb.AppendLine("tags:");
+            foreach (var t in tags) sb.AppendLine($"  - {YamlQuote(t)}");
+        }
+
         sb.AppendLine("categories:");
         sb.AppendLine($"  - {YamlQuote(categoryName)}");
         sb.AppendLine("---");
@@ -51,6 +68,19 @@ public static class PostCreator
         await File.WriteAllTextAsync(filePath, sb.ToString(), new UTF8Encoding(false));
         return filePath;
     }
+
+    /// <summary>
+    /// 把「甲、乙，丙」这类手输的标签串拆成列表。
+    ///
+    /// 中文顿号、逗号、全角逗号都收——手打时这几种都会敲。
+    /// 空片段丢掉，所以结尾多打一个逗号也没关系；重复的按不区分大小写去重。
+    /// </summary>
+    public static List<string> ParseTags(string raw)
+        => raw.Split([',', '，', '、', ';', '；', ' '],
+               StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(t => t.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     /// <summary>YAML 标量加引号，含特殊字符时转义。</summary>
     private static string YamlQuote(string value)

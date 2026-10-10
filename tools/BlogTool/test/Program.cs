@@ -98,6 +98,56 @@ internal static class Program
         {
             File.Delete(created);
         }
+
+        // ---- 描述与标签（可选字段）----
+        Eq("标签按逗号拆", string.Join(',', PostCreator.ParseTags("白银,黄金")), "白银,黄金");
+        Eq("标签按顿号拆", string.Join(',', PostCreator.ParseTags("白银、黄金")), "白银,黄金");
+        Eq("标签按全角逗号拆", string.Join(',', PostCreator.ParseTags("白银，黄金")), "白银,黄金");
+        Eq("标签按空格拆", string.Join(',', PostCreator.ParseTags("白银 黄金")), "白银,黄金");
+        Eq("标签去重", PostCreator.ParseTags("白银、silver、白银").Count, 2);
+        Eq("空标签串得到空列表", PostCreator.ParseTags("   ").Count, 0);
+        Eq("结尾多余逗号不产生空项", PostCreator.ParseTags("白银、").Count, 1);
+
+        var richTitle = "自测-带描述和标签-" + Guid.NewGuid().ToString("N")[..6];
+        var richPath = await PostCreator.CreateAsync(
+            richTitle, "笔记", "note", "这是一句摘要", ["白银", "贵金属"]);
+        try
+        {
+            var rich = await File.ReadAllTextAsync(richPath, Encoding.UTF8);
+            True("写入 description", rich.Contains("description: 这是一句摘要"), "");
+            True("写入 tags 段", rich.Contains("tags:"), "");
+            True("标签逐行列出", rich.Contains("  - 白银") && rich.Contains("  - 贵金属"), "");
+            // 字段顺序要跟着现有文章：tags 在 categories 之前
+            True("tags 排在 categories 前",
+                rich.IndexOf("tags:") > 0 && rich.IndexOf("tags:") < rich.IndexOf("categories:"), "");
+
+            // 新写的文件必须能被文章库自己的解析器读回来，否则建完在库里看不到
+            var reread = Posts.ReadOne(richPath);
+            True("新文件能被文章库解析", reread is not null, "");
+            if (reread is not null)
+            {
+                Eq("回读标题一致", reread.Title, richTitle);
+                Eq("回读标签一致", string.Join(',', reread.Tags), "白银,贵金属");
+            }
+        }
+        finally
+        {
+            File.Delete(richPath);
+        }
+
+        // 描述和标签留空时，frontmatter 里不该出现这两个键
+        var bareTitle = "自测-无描述无标签-" + Guid.NewGuid().ToString("N")[..6];
+        var barePath = await PostCreator.CreateAsync(bareTitle, "笔记", "note");
+        try
+        {
+            var bare = await File.ReadAllTextAsync(barePath, Encoding.UTF8);
+            True("空描述不写 description 键", !bare.Contains("description:"), "");
+            True("空标签不写 tags 键", !bare.Contains("tags:"), "");
+        }
+        finally
+        {
+            File.Delete(barePath);
+        }
         True("清理后文件已删除", !File.Exists(created), created);
 
         // ---- 仓库状态 ----
