@@ -117,7 +117,12 @@ function DeployApp() {
         if (result.diverged) {
           setStep({
             name: 'done',
-            message: `本地与远端已分叉（领先 ${result.ahead} / 落后 ${result.behind}），请先 git pull --rebase 解决`,
+            message: `本地与远端已分叉（领先 ${result.ahead} / 落后 ${result.behind}），已阻断。
+
+本地历史与远端不同源，常见于 rebase / amend / force-push 之后。
+处理方式二选一：
+  git fetch && git rebase origin/main        保留本地提交，接在远端之后
+  git fetch && git reset --hard origin/main   丢弃本地，用远端覆盖`,
             isError: true,
           });
           return;
@@ -411,6 +416,19 @@ async function cmdNonInteractive(): Promise<boolean> {
   }
 
   const state = await getState();
+  if (state.diverged) {
+    // 必须在提交之前拦：等到 commit 完再发现分叉，工作区已经脏了，
+    // 用户得手工 reset 收拾。
+    console.error('✗ 本地与远端已分叉，已阻断');
+    console.error(`  领先 ${state.ahead} 个提交，落后 ${state.behind} 个提交`);
+    console.error('  本地历史与远端不同源（常见于 rebase / amend / force-push 之后）');
+    console.error('\n  处理方式二选一：');
+    console.error('    git fetch && git rebase origin/main   保留本地提交，接在远端之后');
+    console.error('    git fetch && git reset --hard origin/main   丢弃本地，用远端覆盖');
+    process.exitCode = 1;
+    return true;
+  }
+
   const known = new Map(state.files.map((f) => [f.path, f]));
   const selected: ChangedFile[] = [];
 

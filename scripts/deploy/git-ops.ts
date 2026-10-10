@@ -168,21 +168,26 @@ export async function getState(): Promise<GitState> {
     }
   }
 
-  // 与远端的领先/落后。用探测到的上游而不是硬编码 origin/main，
-  // 这样换远端名或改上游跟踪都不会失效。上游缺失时如实返回 null，
-  // 不能默认为 0/0——那会让用户以为「和远端一致」，实际根本没连上。
+  // 与远端的领先/落后。始终对着 origin/<branch> 算，而不是 @{upstream}：
+  // 上游追踪配置可能丢失（rebase/reset 后），读 @{upstream} 会静默返回 0/0，
+  // 把「本地与远端已分叉」这种危险状态伪装成「一致」。同时用
+  // merge-base 显式检测分叉，不能只靠 ahead/behind 都非零——
+  // 那会漏掉 ahead=3/behind=1 这类真实分叉。
+  // merge-base 存在但不相等 => 双方各有对方没有的提交 => 真正的分叉。
   const upstream = await getUpstream(branch);
-  let ahead = 0;
-  let behind = 0;
-  if (upstream) {
-    const ref = `${upstream.remote}/${branch}`;
-    const counts = await git(['rev-list', '--left-right', '--count', `HEAD...${ref}`], { allowFail: true });
-    const [aheadRaw, behindRaw] = counts.trim().split(/\s+/);
-    ahead = Number(aheadRaw) || 0;
-    behind = Number(behindRaw) || 0;
-  }
+  const remote = upstream?.remote ?? 'origin';
+  const remoteRef = `${remote}/${branch}`;
+  const counts = await git(['rev-list', '--left-right', '--count', `HEAD...${remoteRef}`], { allowFail: true });
+  const [aheadRaw, behindRaw] = counts.trim().split(/\s+/);
+  const ahead = Number(aheadRaw) || 0;
+  const behind = Number(behindRaw) || 0;
 
-  return { branch, files, ahead, behind, upstreamMissing: !upstream, diverged: ahead > 0 && behind > 0 };
+  // merge-base 存在但不相等 => 双方各有对方没有的提交 => 真正的分叉。
+  const mergeBase = await git(['merge-base', 'HEAD', remoteRef], { allowFail: true }).then((s) => s.trim());
+  const head = await git(['rev-parse', 'HEAD'], { allowFail: true }).then((s) => s.trim());
+  const diverged = behind > 0 && mergeBase !== '' && mergeBase !== head;
+
+  return { branch, files, ahead, behind, upstreamMissing: !upstream, diverged };
 }
 
 /** 把指定路径加入暂存区。逐个 add 而不是 add .，避免误提交。 */
