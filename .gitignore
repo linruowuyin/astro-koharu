@@ -30,6 +30,15 @@ pnpm-debug.log*
 .idea/
 .vscode/
 
+# 博客发布工具的构建产物：exe 体积近百 MB，不进仓库。
+# 源码在 tools/BlogPublisher/，用 tools/build-exe.ps1 重新生成。
+tools/BlogPublisher/bin/
+tools/BlogPublisher/obj/
+tools/BlogPublisher/publish/
+tools/BlogPublisher/Gui/bin/
+tools/BlogPublisher/Gui/obj/
+tools/BlogPublisher/*.png
+
 # Transformers.js model cache
 .cache/*
 # Keep OG data cache for Vercel builds

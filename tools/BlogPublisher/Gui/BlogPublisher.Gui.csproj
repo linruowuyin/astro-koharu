@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>博客管理面板</AssemblyName>
+    <RootNamespace>BlogPublisher.Gui</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <CodePage>65001</CodePage>
+  </PropertyGroup>
+
+  <!-- 复用控制台版的 git 与发布逻辑，不写第二套 -->
+  <ItemGroup>
+    <Compile Include="..\Core\*.cs" LinkBase="Core" />
+  </ItemGroup>
+
+</Project>

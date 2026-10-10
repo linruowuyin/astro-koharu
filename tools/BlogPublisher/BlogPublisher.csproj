@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>博客发布</AssemblyName>
+    <RootNamespace>BlogPublisher.ConsoleApp</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <!-- 中文界面必须用 UTF-8，否则 Windows 上按 GBK 解码会乱码 -->
+    <CodePage>65001</CodePage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 图形版是独立项目，编译控制台版时不能把它的文件也拉进来 -->
+    <Compile Remove="Gui\**" />
+  </ItemGroup>
+
+</Project>
