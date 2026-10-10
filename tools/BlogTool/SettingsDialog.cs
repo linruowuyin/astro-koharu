@@ -66,7 +66,7 @@ internal sealed class SettingsDialog : Form
         _hint.ForeColor = Color.FromArgb(150, 158, 170);
         _hint.Font = new Font("Microsoft YaHei UI", 8.5F);
         _hint.Text = "令牌由 git 的凭据助手保存，本工具不留存明文。\r\n"
-                   + "GitHub → Settings → Developer settings → Personal access tokens 生成。";
+                   + "令牌留空时，「测试连接」直接用已保存的那份，不用重敲。";
 
         // ---- 操作 ----
         _save = Ui.Button("保存", true, 236, 412, 112, 34);
@@ -107,9 +107,19 @@ internal sealed class SettingsDialog : Form
         {
             _current.Text += $"\r\n远端：{info.OriginUrl}";
         }
+
+        // 令牌生成入口只在该让人去弄新令牌时才提示，平时是噪音
+        if (!info.Exists) HintToken("\r\nGitHub → Settings → Developer settings → Personal access tokens 生成。");
     }
 
-    private bool ValidateInput()
+    /// <summary>在提示区追加一行，不动状态区。</summary>
+    private void HintToken(string extra)
+    {
+        _hint.Text = "令牌由 git 的凭据助手保存，本工具不留存明文。\r\n"
+                   + "令牌留空时，「测试连接」直接用已保存的那份，不用重敲。" + extra;
+    }
+
+    private bool ValidateInput(bool tokenRequired)
     {
         if (string.IsNullOrWhiteSpace(_user.Text))
         {
@@ -117,9 +127,9 @@ internal sealed class SettingsDialog : Form
             _user.Focus();
             return false;
         }
-        if (string.IsNullOrWhiteSpace(_token.Text))
+        if (tokenRequired && string.IsNullOrWhiteSpace(_token.Text))
         {
-            Say("先填个人访问令牌。", Bad: true);
+            Say("要保存新凭据就得先填令牌。", Bad: true);
             _token.Focus();
             return false;
         }
@@ -128,7 +138,7 @@ internal sealed class SettingsDialog : Form
 
     private async Task SaveAsync()
     {
-        if (!ValidateInput()) return;
+        if (!ValidateInput(tokenRequired: true)) return;
         SetBusy(true, "正在保存…");
         try
         {
@@ -150,11 +160,35 @@ internal sealed class SettingsDialog : Form
 
     private async Task TestAsync()
     {
-        if (!ValidateInput()) return;
+        // 令牌框留空表示「用已保存的那份」。凭据明明就在那儿，
+        // 却因为框是空的就报「先填令牌」，等于白存了。
+        var typed = _token.Text;
+        if (!ValidateInput(tokenRequired: false)) return;
+
         SetBusy(true, "正在连接 GitHub…");
         try
         {
-            var (ok, message) = await Credentials.TestAsync(_user.Text.Trim(), _token.Text);
+            var user = _user.Text.Trim();
+            string token;
+
+            if (!string.IsNullOrWhiteSpace(typed))
+            {
+                token = typed;
+            }
+            else
+            {
+                var stored = await Credentials.GetStoredAsync();
+                if (stored.Password.Length == 0)
+                {
+                    Say("既没有已保存的凭据，令牌框也是空的。先填一个令牌。", Bad: true);
+                    _token.Focus();
+                    return;
+                }
+                user = string.IsNullOrEmpty(stored.Username) ? user : stored.Username;
+                token = stored.Password;
+            }
+
+            var (ok, message) = await Credentials.TestAsync(user, token);
             Say(message, Bad: !ok);
         }
         catch (Exception ex)

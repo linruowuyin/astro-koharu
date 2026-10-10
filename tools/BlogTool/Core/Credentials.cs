@@ -83,12 +83,30 @@ public static class Credentials
     }
 
     /// <summary>
-    /// 拿 token 直接问 GitHub 要一次身份，验证它还有没有效。
-    ///
-    /// 不做这个检查的话，token 过期时用户只能等到推送失败才知道，
-    /// 而那时候构建和单测都已经跑完了，浪费的是时间不是 token。
-    /// </summary>
-    public static async Task<(bool Ok, string Message)> TestAsync(string username, string token)
+/// 取回已保存的凭据原文。
+///
+/// 存在的意义是「测试连接」不必让用户把令牌重新敲一遍：
+/// 令牌框留空时，直接拿这里取到的值去问 GitHub。
+/// 取出的密码只在内存里活着，不显示、不写日志、不落盘。
+/// </summary>
+public static async Task<(string Username, string Password)> GetStoredAsync(
+    string host = DefaultHost)
+{
+    var (code, stdout, _) = await Git.RunWithInputAsync(
+        "credential fill", $"protocol=https\nhost={host}\n\n");
+
+    if (code != 0) return ("", "");
+    var parsed = ParseCredentialOutput(stdout);
+    return parsed.Password.Length > 0 ? parsed : ("", "");
+}
+
+/// <summary>
+/// 拿 token 直接问 GitHub 要一次身份，验证它还有没有效。
+///
+/// 不做这个检查的话，token 过期时用户只能等到推送失败才知道，
+/// 而那时候构建和单测都已经跑完了，浪费的是时间不是 token。
+/// </summary>
+public static async Task<(bool Ok, string Message)> TestAsync(string username, string token)
     {
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         var auth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{token}"));

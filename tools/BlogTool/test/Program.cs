@@ -163,12 +163,18 @@ internal static class Program
             Eq("写入后用户名正确", afterSave.Username, "test-user");
             Eq("写入后密码长度正确", afterSave.PasswordLength, "ghp_faketoken000000000000000000000000".Length);
 
-            // 确认令牌只落在临时文件里
+            // 令牌框留空时，测试连接要能直接取回已存的那份，不必用户重敲
+            var stored = await Credentials.GetStoredAsync(host);
+            Eq("可取回已存用户名", stored.Username, "test-user");
+            Eq("可取回已存令牌", stored.Password, "ghp_faketoken000000000000000000000000");
+
+            // 确认密码只落在临时文件里
             True("令牌只写进临时存储",
                 File.ReadAllText(storeFile).Contains("ghp_faketoken"), storeFile);
 
             await Credentials.ClearAsync("test-user", host);
             Eq("清除后没有凭据", (await Credentials.ReadAsync(host)).Exists, false);
+            Eq("清除后取不到令牌", (await Credentials.GetStoredAsync(host)).Password, "");
 
             // 空输入不该被当成有效凭据
             try
