@@ -315,7 +315,7 @@ internal static class SelfTest
 internal sealed class MainForm : Form
 {
     private static readonly Color Bg = Color.FromArgb(244, 246, 249);
-    private static readonly Color Line = Color.FromArgb(222, 226, 232);
+    private static readonly Color Line = Color.FromArgb(214, 219, 226);
     private static readonly Color Fg = Color.FromArgb(28, 32, 38);
     private static readonly Color Dim = Color.FromArgb(120, 128, 140);
     private static readonly Color Accent = Color.FromArgb(22, 119, 255);
@@ -328,7 +328,12 @@ internal sealed class MainForm : Form
     private ActionCard _publish = null!;
     private ActionCard _rollback = null!;
     private readonly RepoBar _repo = new();
-    private readonly TextBox _log = new();
+    private readonly RichTextBox _log = new();
+
+    // 日志字体缓存成两个字段：RichTextBox 每写一行都要设一次 SelectionFont，
+    // 每次 new Font 都会进 GDI 对象表，写几千行就足以把句柄耗光。
+    private readonly Font LogFont = new("Consolas", 9F);
+    private readonly Font LogBoldFont = new("Consolas", 9F, FontStyle.Bold);
     private readonly Panel _logPanel = new();
     private readonly Panel _logHost = new();
     private readonly Label _status = new();
@@ -337,18 +342,20 @@ internal sealed class MainForm : Form
 
     // 纵向布局。状态栏与日志区的 y 在构造函数和 Resize 里各要用一次，
     // 写成两处字面量就迟早只改一处——加一行卡片时日志区盖住卡片就是这么来的。
-    private const int Row1Y = 118;          // 四个动作卡片
-    private const int Row2Y = 230;          // 文章库 / 本地预览
+    private const int RepoY = 16;           // 仓库状态条（不再有标题区）
+    private const int RuleY = 62;           // 分隔细线
+    private const int Row1Y = 78;           // 四个动作卡片
+    private const int Row2Y = 190;          // 文章库 / 本地预览
     private const int CardH = 102;
-    private const int StatusY = 342;
-    private const int LogY = 376;
+    private const int StatusY = 302;
+    private const int LogY = 336;
 
     public MainForm()
     {
         Text = "博客工具";
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(972, 720);
-        MinimumSize = new Size(900, 740);
+        ClientSize = new Size(972, 700);
+        MinimumSize = new Size(900, 720);
         BackColor = Bg;
         ForeColor = Fg;
         Font = new Font("Microsoft YaHei UI", 9F);
@@ -385,39 +392,20 @@ internal sealed class MainForm : Form
     {
         var scale = DeviceDpi / 96f;
 
-        // ---- 标题区 ----
-        var logo = new PictureBox
-        {
-            Bounds = new Rectangle(22, 15, 34, 34),
-            SizeMode = PictureBoxSizeMode.Zoom,
-            Image = Icons.App(34),
-        };
-        var title = new Label
-        {
-            Text = "博客工具",
-            Font = new Font("Microsoft YaHei UI", 15F, FontStyle.Bold),
-            AutoSize = true,
-            Location = new Point(66, 15),
-        };
-        var sub = new Label
-        {
-            Text = Project.Root,
-            ForeColor = Dim,
-            AutoSize = true,
-            Location = new Point(67, 42),
-            MaximumSize = new Size(820, 0),
-        };
-        // 一条细线把标题区和内容区分开，纯靠留白显得太空
-        var headerLine = new Panel
-        {
-            Bounds = new Rectangle(22, 62, ClientSize.Width - 44, 1),
-            BackColor = Line,
-        };
+        // ---- 不画标题区 ----
+        //
+        // Windows 标题栏已经把应用图标和「博客工具」显示出来了。窗口里再画一遍
+        // 图标加大标题，同一个名字在同一屏上出现两次，看着就是重复。去掉之后
+        // 这里只剩一条仓库状态行，省下的高度给日志区——日志才是这个窗口最费
+        // 地方的部分。
+        //
+        // 项目路径改挂在状态条那一行的右端：它是要确认的信息，但不需要占标题
+        // 那种视觉分量。
 
         // ---- 设置入口（GitHub 凭据）----
         var settings = new Button
         {
-            Bounds = new Rectangle(ClientSize.Width - 60, 18, 36, 36),
+            Bounds = new Rectangle(ClientSize.Width - 60, 14, 36, 36),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.White,
             Cursor = Cursors.Hand,
@@ -438,8 +426,31 @@ internal sealed class MainForm : Form
         settings.MouseLeave += (_, _) => settings.Image = Icons.Gear(20, Color.FromArgb(120, 128, 140), scale);
 
         // ---- 仓库状态条 ----
-        _repo.Bounds = new Rectangle(22, 74, ClientSize.Width - 44, 34);
+        // 右边留出 44 给齿轮按钮。状态条现在和齿轮同一行，占满整宽的话
+        // 齿轮会被压住（面板是不透明的，压在下面等于没有）。
+        _repo.Bounds = new Rectangle(22, RepoY, ClientSize.Width - 44 - 44, 34);
         _repo.RefreshRequested += (_, _) => _ = RefreshRepoAsync();
+
+        var sub = new Label
+        {
+            Text = Project.Root,
+            ForeColor = Dim,
+            AutoSize = true,
+            Location = new Point(ClientSize.Width - 60 - 8 - 320, RepoY + 10),
+            MaximumSize = new Size(320, 0),
+            TextAlign = ContentAlignment.MiddleRight,
+        };
+        // 窗口拉窄时路径会顶到状态条上，藏掉比让它压过来好
+        Resize += (_, _) =>
+            sub.Visible = ClientSize.Width > 700 && _repo.Right < sub.Left;
+
+        // 状态条与卡片之间的分隔线。标题区拿掉之后靠它分段，不然所有东西
+        // 糊成一片。
+        var rule = new Panel
+        {
+            Bounds = new Rectangle(22, RuleY, ClientSize.Width - 44, 1),
+            BackColor = Line,
+        };
 
         // ---- 四个功能卡片 ----
         var specs = new (string Title, string Desc, string Key, Func<Bitmap> Icon, Color Accent, Func<Task> Run)[]
@@ -491,7 +502,8 @@ internal sealed class MainForm : Form
         _status.TextAlign = ContentAlignment.MiddleLeft;
 
         // ---- 日志区 ----
-        // 沿用浅色系：深色日志块贴在浅色窗口里像贴错了一块。
+        // 沿用浅色底：深色日志块贴在浅色窗口里像贴错了一块。但用 RichTextBox
+        // 逐行上色，做出终端那种一眼分得出轻重的感觉。
         //
         // 用绝对坐标而不是 Dock：Dock 的填充顺序要按 z-order 反推，
         // 一旦控件添加次序变了，日志区就会盖到卡片上（踩过一次）。
@@ -514,13 +526,14 @@ internal sealed class MainForm : Form
         _clearLog.Click += (_, _) => _log.Clear();
 
         _log.Bounds = new Rectangle(10, 38, 872, 250);
-        _log.Multiline = true;
         _log.ReadOnly = true;
-        _log.ScrollBars = ScrollBars.Vertical;
+        _log.ScrollBars = RichTextBoxScrollBars.Vertical;
         _log.BackColor = Color.FromArgb(252, 252, 253);
-        _log.ForeColor = Color.FromArgb(60, 66, 74);
         _log.BorderStyle = BorderStyle.None;
-        _log.Font = new Font("Consolas", 9F);
+        _log.Font = LogFont;
+        // 选中日志时不要反白成一整块，否则看不清行内的配色
+        _log.HideSelection = false;
+        _log.DetectUrls = false;
 
         _logPanel.Controls.Add(_log);
         _logPanel.Controls.Add(logTitle);
@@ -542,11 +555,9 @@ internal sealed class MainForm : Form
         Controls.Add(_status);
         Controls.AddRange(cards);
         Controls.Add(settings);
-        Controls.Add(headerLine);
+        Controls.Add(rule);
         Controls.Add(_repo);
         Controls.Add(sub);
-        Controls.Add(title);
-        Controls.Add(logo);
         _logHost.SendToBack();
     }
 
@@ -581,6 +592,10 @@ internal sealed class MainForm : Form
 
     // ============ 日志 ============
 
+    /// <summary>往日志区追加一行，并按语义上色。</summary>
+    ///
+    /// 每次写入前先把光标移到末尾并设好这一行的字体与颜色——RichTextBox 是
+    /// 「选区带格式」的，AppendText 用的是当前选区的格式。
     private void Log(string line)
     {
         if (InvokeRequired)
@@ -588,8 +603,18 @@ internal sealed class MainForm : Form
             BeginInvoke(() => Log(line));
             return;
         }
-        _log.AppendText(line + Environment.NewLine);
+
+        var text = LogStyle.Clean(line);
+        var style = LogStyle.Classify(text);
+
         _log.SelectionStart = _log.TextLength;
+        _log.SelectionLength = 0;
+        _log.SelectionColor = style.Color;
+        _log.SelectionFont = style.Bold ? LogBoldFont : LogFont;
+        _log.AppendText(text + Environment.NewLine);
+
+        _log.SelectionStart = _log.TextLength;
+        _log.SelectionLength = 0;
         _log.ScrollToCaret();
     }
 
@@ -734,24 +759,32 @@ internal sealed class MainForm : Form
     }
 
     /// <summary>填一段示例日志，供截图验证主窗口排版。</summary>
+    ///
+    /// 特意混进成功与失败两种行：日志配色只有两种颜色都出现，截图才看得出
+    /// 分色逻辑是不是真的在工作。
+    /// </summary>
     public void SeedSampleLog()
     {
         Log("项目根：" + Project.Root);
         Log("");
         Log("▸ 构建");
         Log("> pnpm build");
-        Log("18:42:07 [build] output: server/static");
-        Log("18:42:31 [build] ✓ Completed in 24s");
+        Log("14:26:12 [build] output: server/static");
+        Log("14:26:59 [build] ✓ Completed in 16s");
+        Log("14:27:00 [build] 99 page(s) built");
         Log("");
         Log("▸ 单测");
         Log("> pnpm test:index");
         Log("26 个测试全部通过");
         Log("");
         Log("▸ 提交");
-        Log("已提交：feat: 更新行情条 (10-10 15:20)");
+        Log("已提交：feat: 重新生成图片占位图");
         Log("");
         Log("▸ 推送");
+        Log("main -> origin/main");
         Log("✓ 发布成功，Cloudflare 正在重新构建");
+        Log("");
+        Log("✗ 图片更新失败（退出码 1），详情见日志");
         _status.Text = "就绪";
     }
 }

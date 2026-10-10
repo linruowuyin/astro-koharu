@@ -22,6 +22,8 @@
     <Compile Include="..\Core\*.cs" Exclude="..\Core\Publish.cs" />
     <Compile Include="..\Icons.cs" />
     <Compile Include="..\Ui.cs" />
+    <!-- 纯逻辑（判色 + 剥 ANSI），不碰界面，可以直接测 -->
+    <Compile Include="..\LogStyle.cs" />
   </ItemGroup>
 
 </Project>

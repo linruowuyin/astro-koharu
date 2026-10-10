@@ -175,9 +175,52 @@ internal static class Program
         // ---- 文章库 ----
         RunPostsTests();
 
+        // ---- 日志分色 ----
+        RunLogStyleTests();
+
         Console.WriteLine();
         Console.WriteLine($"通过 {_passed}，失败 {_failed}");
         return _failed == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// 日志分色的断言。
+    ///
+    /// 分色是「纯函数出颜色」，最容易被改坏而不自知：把失败行染成绿的，
+    /// 界面上看着还挺正常，其实是在报喜。所以判定顺序（失败优先于成功）
+    /// 必须钉住。
+    /// </summary>
+    private static void RunLogStyleTests()
+    {
+        Console.WriteLine("日志分色：");
+
+        Eq("命令行是蓝色", LogStyle.Classify("> pnpm build").Color, LogStyle.Accent);
+        True("命令行加粗", LogStyle.Classify("> pnpm build").Bold, "");
+        Eq("阶段标题最深", LogStyle.Classify("▸ 构建").Color, LogStyle.Heading);
+        True("阶段标题加粗", LogStyle.Classify("▸ 提交").Bold, "");
+
+        Eq("成功行是绿色", LogStyle.Classify("✓ 发布成功").Color, LogStyle.Good);
+        Eq("失败行是红色", LogStyle.Classify("✗ 图片更新失败（退出码 1）").Color, LogStyle.Bad);
+        Eq("含 error 字样判为失败", LogStyle.Classify("fatal: error: something").Color, LogStyle.Bad);
+
+        // 「构建没通过」不含失败词也不含成功词，不能被染绿
+        Eq("中性行不上色", LogStyle.Classify("构建没通过，详情见日志").Color, LogStyle.Normal);
+        Eq("时间戳行压暗", LogStyle.Classify("14:26:59 [build] done").Color, LogStyle.Dim);
+        Eq("方括号开头的过程行压暗", LogStyle.Classify("[2/8] building").Color, LogStyle.Dim);
+        Eq("空行中性", LogStyle.Classify("").Color, LogStyle.Normal);
+
+        // 一句话里正负词都有时，失败必须赢——染绿报错比不染色更糟
+        Eq("正负混合时失败优先",
+            LogStyle.Classify("完成 3 项，但有 1 项失败").Color, LogStyle.Bad);
+
+        // ANSI 控制序列必须剥掉，不然打进控件就是 [0m 之类的方块
+        Eq("剥掉 ANSI 颜色码", LogStyle.Clean("[32m✓ 完成[0m"), "✓ 完成");
+        Eq("剥掉带参数的 ANSI", LogStyle.Clean("[1m[36m[build][0m x"), "[build] x");
+        Eq("剥掉光标控制", LogStyle.Clean("[2K[1Gy"), "y");
+        Eq("普通文本不受影响", LogStyle.Clean("26 个测试全部通过"), "26 个测试全部通过");
+
+        // 剥完之后再判色：包在 ANSI 里的成功行仍要判成绿色
+        Eq("ANSI 包裹的成功行仍判成功", LogStyle.Classify(LogStyle.Clean("[32m✓ 完成[0m")).Color, LogStyle.Good);
     }
 
     /// <summary>
