@@ -55,14 +55,31 @@
       );
     }
 
-    function paint(bar, rows) {
-      // 内容复制一份接在后面，marquee 滚到 -50% 时无缝衔接。
-      var html = rows.map(function (row, i) {
+    function render(bar, rows) {
+      bar._html = rows.map(function (row, i) {
         return itemHtml(list[i], row);
       }).join('');
-
-      bar.innerHTML = '<div class="stock-bar__track">' + html + html + '</div>';
+      layout(bar);
       bar.dataset.state = 'ready';
+    }
+
+    // 内容放得下就整条居中静止显示，放不下才复制一份做无缝滚动。
+    // 每次都先按单份渲染再测量，拿到的是内容本身的宽度。
+    function layout(bar) {
+      var html = bar._html;
+      var track = bar.querySelector('.stock-bar__track');
+      if (!html || !track) return;
+
+      bar.classList.remove('stock-bar--centered', 'stock-bar--scrolling');
+      track.innerHTML = html;
+
+      if (track.offsetWidth <= bar.clientWidth) {
+        bar.classList.add('stock-bar--centered');
+        return;
+      }
+
+      bar.classList.add('stock-bar--scrolling');
+      track.innerHTML = html + html;
     }
 
     function load(bar) {
@@ -91,7 +108,7 @@
         try {
           var rows = json && json.data && json.data.diff;
           if (!rows || !rows.length) throw new Error('empty payload');
-          paint(bar, rows);
+          render(bar, rows);
           bar._timer = setInterval(function () {
             if (bar.isConnected) load(bar);
           }, REFRESH_MS);
@@ -130,6 +147,18 @@
 
     init();
     document.addEventListener('astro:page-load', init);
+
+    // 窗口缩放会改变可用宽度，需要在「居中」和「滚动」之间重新判定。
+    // 去抖是为了避免拖动窗口时反复重排。
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+      var bar = document.getElementById('stock-bar');
+      if (!bar || bar.dataset.state !== 'ready') return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        if (bar.isConnected) layout(bar);
+      }, 150);
+    });
   })();
 </script>
 
@@ -149,15 +178,27 @@
   .stock-bar__track {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 28px;
     height: 46px;
     padding-left: 14px;
     white-space: nowrap;
-    will-change: transform;
-    animation: stock-bar-scroll 45s linear infinite;
   }
 
-  .stock-bar__track:hover {
+  /* 内容放得下：整条居中静止，不做跑马灯 */
+  .stock-bar--centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 放不下才滚动：复制一份，滚到 -50% 时首尾无缝衔接 */
+  .stock-bar--scrolling .stock-bar__track {
+    animation: stock-bar-scroll 45s linear infinite;
+    will-change: transform;
+  }
+
+  .stock-bar--scrolling .stock-bar__track:hover {
     animation-play-state: paused;
   }
 
@@ -212,7 +253,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .stock-bar__track {
+    .stock-bar--scrolling .stock-bar__track {
       animation: none;
     }
   }
