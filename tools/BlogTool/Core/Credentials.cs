@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -83,6 +84,87 @@ public static class Credentials
     }
 
     /// <summary>
+/// 用浏览器完成 GitHub 登录，不经过令牌输入框。
+///
+/// 走的是 git 自带的 Git Credential Manager（credential.helper = manager 时
+/// 一定在），它会打开浏览器做 OAuth 授权，成功后把凭据写进 Windows 凭据
+/// 管理器。用户不需要知道什么是 PAT，也不需要手动粘贴任何一串字符。
+///
+/// 无窗口运行：本程序没有控制台，弹黑框既突兀又没法读状态，
+/// 进度由调用方用 onStatus 回调自己显示。
+/// </summary>
+public static async Task<(bool Ok, string Message)> BrowserLoginAsync(
+    string username, Action<string>? onStatus = null, CancellationToken cancellation = default)
+{
+    var psi = new ProcessStartInfo
+    {
+        FileName = "git",
+        WorkingDirectory = Git.RepoRoot,
+        UseShellExecute = false,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        CreateNoWindow = true,
+        StandardOutputEncoding = Encoding.UTF8,
+        StandardErrorEncoding = Encoding.UTF8,
+    };
+    psi.ArgumentList.Add("credential-manager");
+    psi.ArgumentList.Add("github");
+    psi.ArgumentList.Add("login");
+    psi.ArgumentList.Add("--browser");     // 打开浏览器完成授权
+    psi.ArgumentList.Add("--no-ui");       // 不要 GCM 自己的图形提示
+    psi.ArgumentList.Add("--force");       // 用户主动点了登录，就是要覆盖旧的
+    if (!string.IsNullOrWhiteSpace(username))
+    {
+        psi.ArgumentList.Add("--username");
+        psi.ArgumentList.Add(username.Trim());
+    }
+
+    onStatus?.Invoke("正在启动 GitHub 登录…");
+
+    using var proc = Process.Start(psi);
+    if (proc is null) return (false, "无法启动 git-credential-manager。");
+
+    var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+    var stderrTask = proc.StandardError.ReadToEndAsync();
+
+    try
+    {
+        // 浏览器授权要人来点，可能要一两分钟；这里只防「永远不返回」
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        cts.CancelAfter(TimeSpan.FromMinutes(5));
+        await proc.WaitForExitAsync(cts.Token);
+    }
+    catch (OperationCanceledException)
+    {
+        if (!proc.HasExited) { try { proc.Kill(entireProcessTree: true); } catch { } }
+        return (false, cancellation.IsCancellationRequested ? "已取消登录。" : "5 分钟内没完成，已放弃。");
+    }
+
+    var stdout = await stdoutTask;
+    var stderr = await stderrTask;
+
+    if (proc.ExitCode == 0)
+    {
+        onStatus?.Invoke("登录成功。");
+        return (true, "登录成功，凭据已交给 Git 的凭据助手保存。");
+    }
+
+    var detail = (stderr.Length > 0 ? stderr : stdout).Trim();
+    if (detail.Length > 300) detail = detail[..300];
+    return (false, $"登录失败（退出码 {proc.ExitCode}）{(detail.Length > 0 ? "：\n" + detail : "")}");
+}
+
+/// <summary>在系统默认浏览器里打开 GitHub 的令牌生成页。</summary>
+public static void OpenTokenPage()
+{
+    Process.Start(new ProcessStartInfo
+    {
+        FileName = "https://github.com/settings/tokens/new",
+        UseShellExecute = true,
+    });
+}
+
+/// <summary>
 /// 取回已保存的凭据原文。
 ///
 /// 存在的意义是「测试连接」不必让用户把令牌重新敲一遍：

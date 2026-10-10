@@ -13,13 +13,23 @@ namespace BlogTool;
 /// </summary>
 internal sealed class SettingsDialog : Form
 {
+    private const string DefaultHint =
+        "推荐直接点「浏览器登录」，不用记任何步骤。\r\n" +
+        "想手动填令牌的话，点令牌框右边的链接看说明。";
+
     private readonly TextBox _user = new();
     private readonly TextBox _token = new();
     private readonly CheckBox _reveal = new();
     private readonly Label _current = new();
     private readonly Label _hint = new();
+    private readonly LinkLabel _helpLink = null!;
     private readonly Button _save = null!;
     private readonly Button _clear = null!;
+    private readonly Button _login = null!;
+    private readonly Button _close = null!;
+
+    private CancellationTokenSource? _loginCts;
+    private bool _loggingIn;
 
     public SettingsDialog()
     {
@@ -62,30 +72,80 @@ internal sealed class SettingsDialog : Form
         _reveal.Cursor = Cursors.Hand;
         _reveal.CheckedChanged += (_, _) => _token.UseSystemPasswordChar = !_reveal.Checked;
 
-        _hint.SetBounds(24, 306, 572, 40);
+        // 忘了怎么填令牌是常态，给两个明确入口：看步骤 / 直接打开生成页
+        var help = new LinkLabel
+        {
+            Text = "不会填？看这里",
+            Bounds = new Rectangle(24, 302, 110, 18),
+            AutoSize = false,
+            Font = new Font("Microsoft YaHei UI", 8.5F),
+            LinkColor = Icons.Brand,
+            ActiveLinkColor = Icons.Brand,
+        };
+        help.LinkClicked += (_, _) => ShowTokenGuide();
+        _helpLink = help;
+
+        var openPage = new LinkLabel
+        {
+            Text = "直接打开 GitHub 令牌页",
+            Bounds = new Rectangle(140, 302, 200, 18),
+            AutoSize = false,
+            Font = new Font("Microsoft YaHei UI", 8.5F),
+            LinkColor = Icons.Brand,
+            ActiveLinkColor = Icons.Brand,
+        };
+        openPage.LinkClicked += (_, _) => OpenTokenPage();
+
+        _hint.SetBounds(24, 330, 572, 34);
         _hint.ForeColor = Color.FromArgb(150, 158, 170);
         _hint.Font = new Font("Microsoft YaHei UI", 8.5F);
-        _hint.Text = "令牌由 git 的凭据助手保存，本工具不留存明文。\r\n"
-                   + "令牌留空时，「测试连接」直接用已保存的那份，不用重敲。";
+        _hint.Text = DefaultHint;
 
         // ---- 操作 ----
-        _save = Ui.Button("保存", true, 236, 412, 112, 34);
+        // 「浏览器登录」是首选：不需要记任何步骤，也不用碰令牌。
+        _login = Ui.Button("浏览器登录", true, 24, 412, 140, 34);
+        _login.Click += async (_, _) => await LoginAsync();
+
+        _save = Ui.Button("保存", false, 172, 412, 112, 34);
         _save.Click += async (_, _) => await SaveAsync();
 
-        var test = Ui.Button("测试连接", false, 356, 412, 112, 34);
+        var test = Ui.Button("测试连接", false, 292, 412, 112, 34);
         test.Click += async (_, _) => await TestAsync();
 
-        _clear = Ui.Button("清除", false, 476, 412, 120, 34);
+        _clear = Ui.Button("清除", false, 412, 412, 112, 34);
         _clear.ForeColor = Color.FromArgb(200, 60, 60);
         _clear.Click += async (_, _) => await ClearAsync();
 
-        var close = Ui.Button("关闭", false, 24, 412, 112, 34);
-        close.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
+        _close = Ui.Button("关闭", false, 484, 412, 112, 34);
+        _close.Click += (_, _) =>
+        {
+            if (_loggingIn) { _loginCts?.Cancel(); return; }
+            DialogResult = DialogResult.Cancel;
+            Close();
+        };
 
-        Controls.AddRange([title, stateBox, userLabel, _user, tokenLabel, _token, _reveal, _hint, close, test, _save, _clear]);
-        CancelButton = close;
+        Controls.AddRange([title, stateBox, userLabel, _user, tokenLabel, _token, _reveal,
+            help, openPage, _hint, _login, _save, test, _clear, _close]);
+        CancelButton = _close;
 
         Load += async (_, _) => await LoadAsync();
+    }
+
+    /// <summary>手填令牌时的一次性照做说明。</summary>
+    private void ShowTokenGuide()
+    {
+        MessageBox.Show(this,
+            "如果你更想手动填令牌，按这四步来：\n\n" +
+            "1. 浏览器打开 https://github.com/settings/tokens/new\n" +
+            "   （这个地址可以点「浏览器登录」旁边的链接直接跳）\n\n" +
+            "2. Note（备注）随便填，比如 blog-tool\n" +
+            "   Expiration（有效期）选个日子，建议 90 天\n\n" +
+            "3. 勾选权限 public_repo 就够了\n" +
+            "   你的博客是公开仓库，不需要勾全权限\n\n" +
+            "4. 滚到底点 Generate token，复制那串 gh 开头的字符\n" +
+            "   粘到上面的令牌框，点「保存」\n\n" +
+            "⚠ 令牌只在这一刻显示，关掉页面就再也看不到了，忘了就得重新生成。",
+            "令牌怎么填", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private async Task LoadAsync()
@@ -109,14 +169,80 @@ internal sealed class SettingsDialog : Form
         }
 
         // 令牌生成入口只在该让人去弄新令牌时才提示，平时是噪音
-        if (!info.Exists) HintToken("\r\nGitHub → Settings → Developer settings → Personal access tokens 生成。");
+        if (!info.Exists) Say("当前没有凭据：点「浏览器登录」最快，或点下面的链接手动填令牌。", Bad: false);
     }
 
-    /// <summary>在提示区追加一行，不动状态区。</summary>
-    private void HintToken(string extra)
+    /// <summary>
+/// 浏览器登录：一键完成，不需要用户知道 PAT 是什么。
+/// </summary>
+private async Task LoginAsync()
     {
-        _hint.Text = "令牌由 git 的凭据助手保存，本工具不留存明文。\r\n"
-                   + "令牌留空时，「测试连接」直接用已保存的那份，不用重敲。" + extra;
+        // 重新登录会覆盖当前那份已经能用的凭据。宁可多问一句，
+        // 也不要用一次误点击换来推送突然失败。
+        var info = await Credentials.ReadAsync();
+        if (info.Exists)
+        {
+            var ok = MessageBox.Show(this,
+                $"当前已有一份可用的凭据（{info.Username}，{info.PasswordLength} 位）。\n\n" +
+                "重新登录会用新的结果替换它。令牌本身没问题的话，不用重登。\n\n" +
+                "仍要重新登录？",
+                "覆盖现有凭据", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
+            if (ok != DialogResult.OK) return;
+        }
+
+        _loginCts = new CancellationTokenSource();
+        SetBusy(true, "正在启动 GitHub 登录…");
+        _close.Text = "取消登录";
+
+        try
+        {
+            var (ok, message) = await Credentials.BrowserLoginAsync(
+                _user.Text, status => Say(status, Bad: false), _loginCts.Token);
+
+            if (!ok)
+            {
+                Say(message, Bad: true);
+                return;
+            }
+
+            await LoadAsync();
+
+            // 登录完顺手验一次，省得用户自己再点一下「测试连接」
+            var stored = await Credentials.GetStoredAsync();
+            if (stored.Password.Length == 0)
+            {
+                Say("登录流程走完了，但凭据库里还是没东西。", Bad: true);
+                return;
+            }
+
+            var (valid, detail) = await Credentials.TestAsync(stored.Username, stored.Password);
+            Say(valid ? $"登录成功，{detail}" : $"凭据已保存，但验证没通过：{detail}", Bad: !valid);
+        }
+        catch (Exception ex)
+        {
+            Say($"登录失败：{ex.Message}", Bad: true);
+        }
+        finally
+        {
+            _loginCts.Dispose();
+            _loginCts = null;
+            SetBusy(false, "");
+            _close.Text = "关闭";
+        }
+    }
+
+    /// <summary>打开 GitHub 的令牌生成页。</summary>
+    private void OpenTokenPage()
+    {
+        try
+        {
+            Credentials.OpenTokenPage();
+            Say("已打开令牌生成页，照上面的步骤填完再粘回来。", Bad: false);
+        }
+        catch (Exception ex)
+        {
+            Say($"打不开浏览器：{ex.Message}", Bad: true);
+        }
     }
 
     private bool ValidateInput(bool tokenRequired)
@@ -236,10 +362,13 @@ internal sealed class SettingsDialog : Form
     private void SetBusy(bool busy, string status)
     {
         if (busy) Say(status, Bad: false);
+        _loggingIn = busy;
+        _login.Enabled = !busy;
         _save.Enabled = !busy;
         _clear.Enabled = !busy;
         _user.Enabled = !busy;
         _token.Enabled = !busy;
+        _helpLink.Enabled = !busy;
         Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
     }
 }
