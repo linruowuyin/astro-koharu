@@ -30,14 +30,17 @@ pnpm-debug.log*
 .idea/
 .vscode/
 
-# 博客发布工具的构建产物：exe 体积近百 MB，不进仓库。
-# 源码在 tools/BlogPublisher/，用 tools/build-exe.ps1 重新生成。
-tools/BlogPublisher/bin/
-tools/BlogPublisher/obj/
-tools/BlogPublisher/publish/
-tools/BlogPublisher/Gui/bin/
-tools/BlogPublisher/Gui/obj/
-tools/BlogPublisher/*.png
+# 博客工具的构建产物：exe 有 50MB，截图和测试输出也不该进仓库。
+# 源码在 tools/BlogTool/，用 dotnet publish 重新生成：
+#   dotnet publish tools/BlogTool -c Release -r win-x64 --self-contained true \
+#     -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+tools/BlogTool/bin/
+tools/BlogTool/obj/
+tools/BlogTool/publish/
+tools/BlogTool/test/bin/
+tools/BlogTool/test/obj/
+tools/BlogTool/test/shots/
+tools/BlogTool/test/*.txt
 
 # Transformers.js model cache
 .cache/*

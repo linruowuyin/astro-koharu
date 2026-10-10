@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    轻量测试工程：不引测试框架，直接 Compile 源文件跑断言。
+    这里的检查都是「跑一次就知道对不对」的性质，套 xunit 反而更麻烦，
+    而且 exe 本来就不依赖外部包，保持零依赖。
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>BlogTool.Test</AssemblyName>
+    <RootNamespace>BlogTool.Test</RootNamespace>
+    <CodePage>65001</CodePage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Publish 里的流程要弹对话框，属于界面层，测试只覆盖底层逻辑。 -->
+    <Compile Include="..\Core\*.cs" Exclude="..\Core\Publish.cs" />
+  </ItemGroup>
+
+</Project>

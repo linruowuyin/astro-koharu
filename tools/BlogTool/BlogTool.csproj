@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>博客工具</AssemblyName>
+    <RootNamespace>BlogTool</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <CodePage>65001</CodePage>
+  </PropertyGroup>
+
+  <!--
+    把项目路径写进 exe：程序放到桌面后没法靠「逐级向上找」定位仓库，
+    这是首次运行的兜底。之后用户手动选过一次就会记在 %APPDATA%\BlogTool\project.txt。
+    项目换了位置就改这里重新编译。
+  -->
+  <ItemGroup Condition="'$(BlogRoot)' != ''">
+    <AssemblyMetadata Include="BlogRoot" Value="$(BlogRoot)" />
+  </ItemGroup>
+
+  <!--
+    SDK 默认把整个目录树下的 .cs 都算进本工程，test/ 是独立工程，
+    不排除的话它的 AssemblyInfo 和 Program 会被重复编译进来。
+  -->
+  <ItemGroup>
+    <Compile Remove="test\**" />
+    <EmbeddedResource Remove="test\**" />
+    <None Remove="test\**" />
+  </ItemGroup>
+
+</Project>
